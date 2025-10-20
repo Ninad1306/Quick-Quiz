@@ -1,0 +1,23 @@
+from flask import Flask
+from flask_bcrypt import Bcrypt
+from flask_cors import CORS
+from app.models import db
+import os
+
+app = Flask(__name__)
+
+app_dir = os.path.abspath(os.path.dirname(__file__))
+parent_dir = os.path.dirname(app_dir)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(parent_dir, "users.db")}'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'default_key_sample_a5%@saw^97A')
+
+db.init_app(app)
+bcrypt = Bcrypt(app)
+cors = CORS(app)
+
+from app.setup import setup_db
+setup_db(app, db)
+
+from app.auth import auth_bp
+app.register_blueprint(auth_bp)
