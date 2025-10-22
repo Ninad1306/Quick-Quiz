@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app import bcrypt, db
 from app.models import User
 import re
@@ -36,7 +37,6 @@ def user_granted_admin(email_id):
 
 @auth_bp.route('/register', methods=['POST'])
 def auth_register():
-
     data = request.get_json()
 
     email_id = data.get('email_id', None)
@@ -45,19 +45,19 @@ def auth_register():
     role = data.get('role', None)
 
     if not email_id or not name or not password or not role:
-        return jsonify({"error": "missing required fields"}), 400
+        return jsonify({"error": "Missing Required Fields"}), 400
     
     if not validate_email(email_id):
-        return jsonify({"error": "invalid email"}), 400
+        return jsonify({"error": "Invalid E-mail"}), 400
     
     if not validate_password(password):
-        return jsonify({"error": "password must have 8-16 characters, with at least 1 of special character, number and capital letter"}), 400
+        return jsonify({"error": "Password must have 8-16 characters, with at least 1 of special character, number and capital letter"}), 400
     
     if not validate_role(role):
-        return jsonify({"error": "role can only be one of teacher, student or admin"}), 400
+        return jsonify({"error": "Role can only be one of teacher, student or admin"}), 400
     
     if role == 'admin' and not user_granted_admin(email_id):
-        return jsonify({"error": "this user is not allowed to be an admin"}), 400
+        return jsonify({"error": "This user is not allowed to be an admin"}), 400
     
     hashed_password = bcrypt.generate_password_hash(password).decode('UTF-8')
 
@@ -66,8 +66,44 @@ def auth_register():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"message": "user registered successfully"}), 201
+        return jsonify({"message": "User Registered Successfully"}), 201
     
     except Exception as e:
         db.session().rollback()
-        return jsonify({"error": f"could not register user. exception: {str(e)}"})
+        return jsonify({"error": f"Could not register user. Exception: {str(e)}"})
+    
+@auth_bp.route('/login', methods=['POST'])
+def auth_login():
+    data = request.get_json()
+    
+    email_id = data.get('email_id', None)
+    password = data.get('password', None)
+    
+    if not email_id or not password:
+        return jsonify({"error": "Missing Required Fields"}), 400
+    
+    user = User.query.filter_by(email=email_id).first()
+    
+    if not user:
+        return jsonify({"error": "Invalid Credentials"}), 401
+    
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid Credentials"}), 401
+    
+    access_token = create_access_token(identity=email_id, additional_claims={"role": user.role, "name": user.name})
+    
+    return jsonify({
+        "message": "login successful",
+        "access_token": access_token,
+        "user": {
+            "email": user.email,
+            "name": user.name,
+            "role": user.role
+        }
+    }), 200
+
+@auth_bp.route('/verify', methods=['GET'])
+@jwt_required()
+def verify_token():
+    current_user = get_jwt_identity()
+    return jsonify({"valid": True, "user": current_user}), 200
