@@ -59,6 +59,10 @@ def auth_register():
     if role == 'admin' and not user_granted_admin(email_id):
         return jsonify({"error": "This user is not allowed to be an admin"}), 400
     
+    user = User.query.filter_by(email=email_id).first()
+    if user:
+        return jsonify({"error": "User is already registered"}), 400
+
     hashed_password = bcrypt.generate_password_hash(password).decode('UTF-8')
 
     new_user = User(email=email_id, name=name, role=role, password=hashed_password)
@@ -69,7 +73,7 @@ def auth_register():
         return jsonify({"message": "User Registered Successfully"}), 201
     
     except Exception as e:
-        db.session().rollback()
+        db.session.rollback()
         return jsonify({"error": f"Could not register user. Exception: {str(e)}"})
     
 @auth_bp.route('/login', methods=['POST'])
