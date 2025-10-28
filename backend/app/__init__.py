@@ -24,3 +24,5 @@ setup_db(app, db)
 
 from app.auth import auth_bp
 app.register_blueprint(auth_bp)
+from app.student import student_bp
+app.register_blueprint(student_bp)
