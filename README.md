@@ -5,9 +5,11 @@ Beyond simple question generation, the platform integrates an advanced grading a
 
 ## Architecture:
 
-Backend: Flask
-Frontend: Vite+React
-DB: SQLite
+<ul>
+<li>Backend: Flask
+<li>Frontend: Vite+React
+<li>DB: SQLite
+</ul>
 
 ## Installation:
 
