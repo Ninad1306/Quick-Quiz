@@ -1,5 +1,6 @@
 from sqlalchemy.orm import mapped_column
 from sqlalchemy import Integer, String, DateTime, ForeignKey
+from sqlalchemy import sql
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -13,6 +14,7 @@ class User(db.Model):
     email = mapped_column(String(64), unique=True, nullable=False)
     role = mapped_column(String(64), nullable=False)
     password = mapped_column(String(128), nullable=False)
+    creation_time = mapped_column(DateTime, default=sql.func.now(), nullable=False)
 
 class Courses(db.Model):
     __tablename__ = 'courses'
