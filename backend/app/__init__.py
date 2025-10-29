@@ -24,5 +24,8 @@ setup_db(app, db)
 
 from app.auth_routes import auth_bp
 from app.teacher_routes import teacher_bp
+from app.student import student_bp
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(teacher_bp)
+app.register_blueprint(student_bp)
