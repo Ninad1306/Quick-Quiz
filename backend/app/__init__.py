@@ -22,5 +22,7 @@ cors = CORS(app)
 from app.setup import setup_db
 setup_db(app, db)
 
-from app.auth import auth_bp
+from app.auth_routes import auth_bp
+from app.teacher_routes import teacher_bp
 app.register_blueprint(auth_bp)
+app.register_blueprint(teacher_bp)

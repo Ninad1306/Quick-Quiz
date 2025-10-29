@@ -12,6 +12,15 @@ def register_course():
 
     user_email = get_jwt_identity()
     user = User.query.filter_by(email=user_email).first()
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    if user.role != 'teacher':
+        return jsonify({'error': 'Only teachers are allowed to register courses'}), 403
     
-    # print(type(user))
+    data = request.get_json()
+    
+
+    
     return jsonify({"message": "Course Registered Successfully"}), 200
