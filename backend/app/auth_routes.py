@@ -100,6 +100,7 @@ def auth_login():
         "message": "login successful",
         "access_token": access_token,
         "user": {
+            "id": user.id,
             "email": user.email,
             "name": user.name,
             "role": user.role

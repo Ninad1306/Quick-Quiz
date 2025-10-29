@@ -1,8 +1,9 @@
-from sqlalchemy.orm import mapped_column
-from sqlalchemy import Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import mapped_column, relationship, validates
+from sqlalchemy import Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy import sql
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from app.constants import *
+import re
 
 db = SQLAlchemy()
 
@@ -19,18 +20,79 @@ class User(db.Model):
 class Courses(db.Model):
     __tablename__ = 'courses'
 
-    course_id = mapped_column(Integer, primary_key=True)
+    course_id = mapped_column(String(8), primary_key=True)
     course_name = mapped_column(String(64), nullable=False)
+    course_level = mapped_column(String(64), nullable=False)
+    course_objectives = mapped_column(Text, nullable=True)
+
+    teacher_courses_maps = relationship(
+        'Teacher_Courses_Map',
+        back_populates='course',
+        cascade='all, delete-orphan'
+    )
+
+    @validates('course_id')
+    def validate_course_id(self, key, course_id):
+        if len(course_id) > MIN_COURSE_LENGTH:
+            raise ValueError(f"Course ID should be {MIN_COURSE_LENGTH} character or less")
+        return course_id
+
+    @validates('course_name')
+    def validate_course_id(self, key, course_name):
+        if not course_name or len(course_name)==0:
+            raise ValueError(f"Course name should not be empty")
+        return course_name
+
+    @validates('course_level')
+    def validate_course_id(self, key, course_level):
+        if course_level not in COURSE_LEVELS:
+            raise ValueError("Invalid course level specified")
+        return course_level
     
 class Teacher_Courses_Map(db.Model):
+
     __tablename__ = 'teacher_courses_map'
 
     teacher_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
     course_id = mapped_column(String(64), ForeignKey('courses.course_id'), nullable=False)
-    offered_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
+    offered_at = mapped_column(String(64), nullable=False)
+
     __table_args__ = (
-        db.PrimaryKeyConstraint('teacher_id', 'course_id'),
+        db.PrimaryKeyConstraint('teacher_id', 'course_id', 'offered_at'),
     )
+
+    course = relationship(
+        'Courses',
+        back_populates='teacher_courses_maps',
+    )
+
+
+    @validates('offered_at')
+    def validate_offered_at(self, key, offered_at):
+
+        existing_mapping = Teacher_Courses_Map.query.filter_by(course_id=self.course_id, offered_at=offered_at).first()
+        if existing_mapping:
+            raise ValueError(f"Course {self.course_id} is already being offered in {offered_at}")
+
+        if offered_at.isdigit():
+            year = int(offered_at)
+            if MIN_YEAR_COURSE_OFFERING <= year <= MAX_YEAR_COURSE_OFFERING:
+                return offered_at
+            else:
+                raise ValueError(f"Year must be between {MIN_YEAR_COURSE_OFFERING} and {MAX_YEAR_COURSE_OFFERING}")
+        
+        semester_pattern = r"^(Fall|Spring)_(\d{4})$"
+        match = re.match(semester_pattern, offered_at)
+
+        if match:
+            semester, year = match.groups()
+            year = int(year)
+            if MIN_YEAR_COURSE_OFFERING <= year <= MAX_YEAR_COURSE_OFFERING:
+                return offered_at
+            else:
+                raise ValueError(f"offered_at should be must be either a year within the range ({MIN_YEAR_COURSE_OFFERING}, {MAX_YEAR_COURSE_OFFERING}) or in the form Fall_Year/Spring_Year ")
+        
+        return offered_at
 
 class Student_Courses_Map(db.Model):
     __tablename__ = 'student_courses_map'
