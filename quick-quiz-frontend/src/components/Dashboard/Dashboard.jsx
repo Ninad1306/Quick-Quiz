@@ -1,35 +1,203 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen } from 'lucide-react';
+import Navbar from '../Utils/Navbar';
+import Course from '../Course/Course';
+import CourseCard from '../Course/CourseCard';
+import AddCourse from '../Modal/AddCourse';
+import EnrollCourse from '../Modal/EnrollCourse';
+import AddQuiz from '../Modal/AddQuiz';
 
-function Dashboard({ user, onLogout }) {
+const MainPage = ({ user, onLogout }) => {
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [showAddQuizModal, setShowAddQuizModal] = useState(false);
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCourses(user.role);
+  }, []);
+
+  const fetchCourses = async (role) => {
+    setLoading(true);
+    setTimeout(() => {
+      if (role === 'teacher') {
+        setCourses([
+          {
+            course_id: "CS725",
+            course_name: "Foundations of Machine Learning",
+            course_level: "Postgraduate",
+            course_objectives: "Learn fundamental ML algorithms and techniques",
+            offered_at: ["Fall_2025"],
+            students_enrolled: 45
+          },
+          {
+            course_id: "CS747",
+            course_name: "Foundations of Intelligent and Learning Agents",
+            course_level: "Postgraduate",
+            course_objectives: "Study intelligent agents and reinforcement learning",
+            offered_at: ["Fall_2025"],
+            students_enrolled: 38
+          }
+        ]);
+      } else {
+        setCourses([
+          {
+            course_id: "CS725",
+            course_name: "Foundations of Machine Learning",
+            course_level: "Postgraduate",
+            taken_at: "2025-11-01T10:00:00"
+          },
+          {
+            course_id: "CS699",
+            course_name: "Software Lab",
+            course_level: "Postgraduate",
+            taken_at: "2025-10-15T09:30:00"
+          }
+        ]);
+      }
+      setLoading(false);
+    }, 500);
+  };
+
+  const fetchAvailableCourses = async () => {
+    setTimeout(() => {
+      setAvailableCourses([
+        { course_id: "CS747", course_name: "Foundations of Intelligent and Learning Agents" },
+        { course_id: "CS791", course_name: "Practical Foundations of AI" }
+      ]);
+    }, 300);
+  };
+
+  const handleAddCourse = (formData) => {
+    console.log('Registering course:', formData);
+    setShowAddCourseModal(false);
+    fetchCourses(user.role);
+  };
+
+  const handleEnroll = (courseId) => {
+    console.log('Enrolling in course:', courseId);
+    setShowEnrollModal(false);
+    fetchCourses(user.role);
+  };
+
+  const handleCourseClick = (course) => {
+    setSelectedCourse(course);
+  };
+
+  const handleBackToCourses = () => {
+    setSelectedCourse(null);
+  };
+
+  const handleAddQuiz = (quizData) => {
+    console.log('Creating quiz:', quizData);
+    setShowAddQuizModal(false);
+  };
+
+  const handleViewAnalytics = () => {
+    console.log('View analytics for:', selectedCourse?.course_id);
+  };
+
+  useEffect(() => {
+    if (showEnrollModal) {
+      fetchAvailableCourses();
+    }
+  }, [showEnrollModal]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-            <button
-              onClick={onLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Navbar
+        user={user}
+        onLogout={onLogout}
+        onAddCourse={() => setShowAddCourseModal(true)}
+        onEnrollCourse={() => setShowEnrollModal(true)}
+        showCourseActions={!!selectedCourse}
+        onAddQuiz={() => setShowAddQuizModal(true)}
+        onViewAnalytics={handleViewAnalytics}
+        onBack={handleBackToCourses}
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Welcome, {user.name}!
-          </h2>
-          <div className="space-y-2 text-gray-600">
-            <p><span className="font-semibold">Email:</span> {user.email}</p>
-            <p><span className="font-semibold">Role:</span> <span className="capitalize">{user.role}</span></p>
+      {selectedCourse ? (
+        <Course
+          course={selectedCourse}
+          userRole={user.role}
+          onBack={handleBackToCourses}
+          onAddQuiz={() => setShowAddQuizModal(true)}
+          onViewAnalytics={handleViewAnalytics}
+        />
+      ) : (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-gray-800">
+              {user.role === 'teacher' ? 'My Courses' : 'Enrolled Courses'}
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {user.role === 'teacher' 
+                ? 'Manage your courses and create quizzes' 
+                : 'View your enrolled courses and take quizzes'}
+            </p>
           </div>
-        </div>
-      </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <BookOpen className="mx-auto text-gray-400 mb-4" size={48} />
+              <p className="text-xl text-gray-600">No courses found</p>
+              <p className="text-gray-500 mt-2">
+                {user.role === 'teacher' 
+                  ? 'Click "Add Course" to register a new course' 
+                  : 'Click "Enroll Course" to join a course'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map(course => (
+                <CourseCard
+                  key={course.course_id}
+                  course={course}
+                  userRole={user.role}
+                  onClick={() => handleCourseClick(course)}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      )}
+
+      <AddCourse
+        show={showAddCourseModal}
+        onClose={() => setShowAddCourseModal(false)}
+        onSubmit={handleAddCourse}
+      />
+
+      <EnrollCourse
+        show={showEnrollModal}
+        onClose={() => setShowEnrollModal(false)}
+        courses={availableCourses}
+        onEnroll={handleEnroll}
+      />
+
+      <AddQuiz
+        show={showAddQuizModal}
+        onClose={() => setShowAddQuizModal(false)}
+        courseId={selectedCourse?.course_id}
+        onSubmit={handleAddQuiz}
+      />
     </div>
   );
-}
+};
 
-export default Dashboard;
+export default MainPage;

@@ -70,7 +70,7 @@ function LoginForm({ onSuccess }) {
             value={formData.email_id}
             onChange={(e) => setFormData({ ...formData, email_id: e.target.value })}
             onKeyPress={handleKeyPress}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:opacity-30 outline-none transition"
             placeholder="your.email@example.com"
             required
           />
@@ -86,7 +86,7 @@ function LoginForm({ onSuccess }) {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               onKeyPress={handleKeyPress}
-              className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+              className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:opacity-30 outline-none transition"
               placeholder="••••••••"
               required
             />
