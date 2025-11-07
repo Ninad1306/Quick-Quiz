@@ -50,7 +50,6 @@ class Courses(db.Model):
         return course_level
     
 class Teacher_Courses_Map(db.Model):
-
     __tablename__ = 'teacher_courses_map'
 
     teacher_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
@@ -69,7 +68,6 @@ class Teacher_Courses_Map(db.Model):
 
     @validates('offered_at')
     def validate_offered_at(self, key, offered_at):
-
         existing_mapping = Teacher_Courses_Map.query.filter_by(course_id=self.course_id, offered_at=offered_at).first()
         if existing_mapping:
             raise ValueError(f"Course {self.course_id} is already being offered in {offered_at}")

@@ -12,7 +12,6 @@ def validate_email(email_id):
     return True if match else False
 
 def validate_password(password):
-    
     if len(password) < 8 or len(password) > 16:
         return False
     

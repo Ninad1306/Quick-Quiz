@@ -53,14 +53,11 @@ def register_course(user, course_details, token):
     response = requests.post(url, json=course_details, headers=headers)
 
 for user in DATA:
-
     user_details = user["user_details"]
     user_register_response = register_user(user_details)
 
     if user_register_response:
-
         print(f"Registered the user {user_details["name"]}")
-
         token = login_user(user_details)
         print(f"{user_details["name"]} has logged in")
 

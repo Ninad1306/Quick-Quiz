@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from app import bcrypt, db
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app import db
 from app.models import User, Courses, Teacher_Courses_Map
 from functools import wraps
 from app.utils import get_current_semester_and_year
@@ -8,7 +8,6 @@ from app.utils import get_current_semester_and_year
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
 def teacher_required(func):
-
     @wraps(func)
     @jwt_required()
     def wrapper(*args, **kwargs):
@@ -29,7 +28,6 @@ def teacher_required(func):
 @teacher_bp.route('/register_course', methods=['POST'])
 @teacher_required
 def register_course(user):
-
     data = request.get_json()
     course_id = data.get('course_id', None)
     course_name = data.get('course_name', None)
@@ -79,7 +77,6 @@ def register_course(user):
 @teacher_bp.route('/list_courses', methods=['GET'])
 @teacher_required
 def list_courses(user):
-
     status = request.args.get('status', 'all')
     current_semester, current_year = get_current_semester_and_year()
 

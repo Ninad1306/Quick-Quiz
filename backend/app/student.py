@@ -101,7 +101,7 @@ def get_available_courses():
 
 	courses = [{"course_id": c.course_id, "course_name": c.course_name} for c in available]
 
-	return jsonify({"available_courses": courses}), 200
+	return jsonify(courses), 200
 
 
 
