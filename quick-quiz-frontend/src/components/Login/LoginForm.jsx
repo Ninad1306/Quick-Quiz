@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import axios from "axios";
 
 const API_BASE_URL = 'http://localhost:5000';
 
@@ -17,17 +18,14 @@ function LoginForm({ onSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
+      const res = await axios.post(`${API_BASE_URL}/auth/login`,formData, {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
+      });      
+      const data = await res.data;
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (res.statusText === "OK") {
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         onSuccess(data.user);

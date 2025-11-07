@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen } from 'lucide-react';
-import Navbar from '../Utils/Navbar';
-import Course from '../Course/Course';
-import CourseCard from '../Course/CourseCard';
-import AddCourse from '../Modal/AddCourse';
-import EnrollCourse from '../Modal/EnrollCourse';
-import AddQuiz from '../Modal/AddQuiz';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { BookOpen } from "lucide-react";
+import Navbar from "../Utils/Navbar";
+import Course from "../Course/Course";
+import CourseCard from "../Course/CourseCard";
+import AddCourse from "../Modal/AddCourse";
+import EnrollCourse from "../Modal/EnrollCourse";
+import AddQuiz from "../Modal/AddQuiz";
 
+const API_BASE_URL = 'http://localhost:5000';
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -22,63 +24,41 @@ const MainPage = ({ user, onLogout }) => {
 
   const fetchCourses = async (role) => {
     setLoading(true);
-    setTimeout(() => {
-      if (role === 'teacher') {
-        setCourses([
-          {
-            course_id: "CS725",
-            course_name: "Foundations of Machine Learning",
-            course_level: "Postgraduate",
-            course_objectives: "Learn fundamental ML algorithms and techniques",
-            offered_at: ["Fall_2025"],
-            students_enrolled: 45
-          },
-          {
-            course_id: "CS747",
-            course_name: "Foundations of Intelligent and Learning Agents",
-            course_level: "Postgraduate",
-            course_objectives: "Study intelligent agents and reinforcement learning",
-            offered_at: ["Fall_2025"],
-            students_enrolled: 38
-          }
-        ]);
+    setTimeout(async () => {
+      const headers = {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      };
+
+      if (role === "teacher") {
+        const res = await axios.get(`${API_BASE_URL}/teacher/list_courses`, { headers });
+        setCourses(res.data);
       } else {
-        setCourses([
-          {
-            course_id: "CS725",
-            course_name: "Foundations of Machine Learning",
-            course_level: "Postgraduate",
-            taken_at: "2025-11-01T10:00:00"
-          },
-          {
-            course_id: "CS699",
-            course_name: "Software Lab",
-            course_level: "Postgraduate",
-            taken_at: "2025-10-15T09:30:00"
-          }
-        ]);
+        const res = await axios.get(`${API_BASE_URL}/student/courses`, { headers });
+        setCourses(res.data);
       }
       setLoading(false);
     }, 500);
   };
 
   const fetchAvailableCourses = async () => {
-    setTimeout(() => {
-      setAvailableCourses([
-        { course_id: "CS747", course_name: "Foundations of Intelligent and Learning Agents" },
-        { course_id: "CS791", course_name: "Practical Foundations of AI" }
-      ]);
+    setTimeout(async () => {
+      const headers = {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      };
+      
+      const res = await axios.get(`${API_BASE_URL}/student/available`, { headers });
+      setAvailableCourses(res.data);
     }, 300);
   };
 
   const handleAddCourse = (formData) => {
-    console.log('Registering course:', formData);
+    console.log("Registering course:", formData);
     setShowAddCourseModal(false);
     fetchCourses(user.role);
   };
 
   const handleEnroll = (courseId) => {
-    console.log('Enrolling in course:', courseId);
+    console.log("Enrolling in course:", courseId);
     setShowEnrollModal(false);
     fetchCourses(user.role);
   };
@@ -92,12 +72,12 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const handleAddQuiz = (quizData) => {
-    console.log('Creating quiz:', quizData);
+    console.log("Creating quiz:", quizData);
     setShowAddQuizModal(false);
   };
 
   const handleViewAnalytics = () => {
-    console.log('View analytics for:', selectedCourse?.course_id);
+    console.log("View analytics for:", selectedCourse?.course_id);
   };
 
   useEffect(() => {
@@ -139,12 +119,12 @@ const MainPage = ({ user, onLogout }) => {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <h2 className="text-3xl font-bold text-gray-800">
-              {user.role === 'teacher' ? 'My Courses' : 'Enrolled Courses'}
+              {user.role === "teacher" ? "My Courses" : "Enrolled Courses"}
             </h2>
             <p className="text-gray-600 mt-1">
-              {user.role === 'teacher' 
-                ? 'Manage your courses and create quizzes' 
-                : 'View your enrolled courses and take quizzes'}
+              {user.role === "teacher"
+                ? "Manage your courses and create quizzes"
+                : "View your enrolled courses and take quizzes"}
             </p>
           </div>
 
@@ -157,14 +137,14 @@ const MainPage = ({ user, onLogout }) => {
               <BookOpen className="mx-auto text-gray-400 mb-4" size={48} />
               <p className="text-xl text-gray-600">No courses found</p>
               <p className="text-gray-500 mt-2">
-                {user.role === 'teacher' 
-                  ? 'Click "Add Course" to register a new course' 
+                {user.role === "teacher"
+                  ? 'Click "Add Course" to register a new course'
                   : 'Click "Enroll Course" to join a course'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.map(course => (
+              {courses.map((course) => (
                 <CourseCard
                   key={course.course_id}
                   course={course}
