@@ -76,7 +76,7 @@ def get_enrolled_courses():
 				"taken_at": em.taken_at.isoformat() if getattr(em, 'taken_at', None) else None
 			})
 
-	return jsonify({"enrolled_courses": courses}), 200
+	return jsonify(courses), 200
 
 
 @student_bp.route('/available', methods=['GET'])
