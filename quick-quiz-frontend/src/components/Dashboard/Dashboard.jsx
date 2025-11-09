@@ -8,7 +8,7 @@ import AddCourse from "../Modal/AddCourse";
 import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = "http://localhost:5000";
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -30,10 +30,14 @@ const MainPage = ({ user, onLogout }) => {
       };
 
       if (role === "teacher") {
-        const res = await axios.get(`${API_BASE_URL}/teacher/list_courses`, { headers });
+        const res = await axios.get(`${API_BASE_URL}/teacher/list_courses`, {
+          headers,
+        });
         setCourses(res.data);
       } else {
-        const res = await axios.get(`${API_BASE_URL}/student/courses`, { headers });
+        const res = await axios.get(`${API_BASE_URL}/student/courses`, {
+          headers,
+        });
         setCourses(res.data);
       }
       setLoading(false);
@@ -45,20 +49,35 @@ const MainPage = ({ user, onLogout }) => {
       const headers = {
         Authorization: "Bearer " + localStorage.getItem("token"),
       };
-      
-      const res = await axios.get(`${API_BASE_URL}/student/available`, { headers });
+
+      const res = await axios.get(`${API_BASE_URL}/student/available`, {
+        headers,
+      });
       setAvailableCourses(res.data);
     }, 300);
   };
 
-  const handleAddCourse = (formData) => {
-    console.log("Registering course:", formData);
+  const handleAddCourse = async (formData) => {
+    await axios.post(`${API_BASE_URL}/teacher/register_course`, formData, {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    });
+
     setShowAddCourseModal(false);
     fetchCourses(user.role);
   };
 
-  const handleEnroll = (courseId) => {
-    console.log("Enrolling in course:", courseId);
+  const handleEnroll = async (courseId) => {
+    await axios.post(
+      `${API_BASE_URL}/student/enroll`,
+      { course_id: courseId },
+      {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+      }
+    );
     setShowEnrollModal(false);
     fetchCourses(user.role);
   };

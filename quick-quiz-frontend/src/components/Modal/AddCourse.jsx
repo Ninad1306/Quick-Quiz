@@ -13,9 +13,7 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
     offered_at: 'Fall_2025'
   });
 
-  const courseLevels = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 
-    'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 
-    'Undergraduate', 'Postgraduate'];
+  const courseLevels = ['Undergraduate', 'Postgraduate'];
 
   const handleSubmit = () => {
     onSubmit(formData);
@@ -24,7 +22,7 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
       course_name: '',
       course_level: 'Postgraduate',
       course_objectives: '',
-      offered_at: 'Fall_2025'
+      offered_at: '2025'
     });
   };
 
@@ -54,7 +52,7 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
           label="Offered At"
           value={formData.offered_at}
           onChange={(e) => setFormData({...formData, offered_at: e.target.value})}
-          placeholder="e.g., Fall_2025 or 2025"
+          placeholder="e.g., 2025"
           required
         />
         <InputField
