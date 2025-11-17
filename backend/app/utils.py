@@ -16,11 +16,11 @@ def get_question_type():
 
     r = random.random()
     if r > 0.4:
-        return 'msq' #mcq
+        return 'mcq' 
     elif r > 0.1:
-        return 'msq' #msq
+        return 'msq'
     else:
-        return 'msq' #nat
+        return 'mcq' # originially nat, but defaulting to mcq until nat is fixed
 
 def get_question_level(test_level):
 
