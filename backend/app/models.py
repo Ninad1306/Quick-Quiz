@@ -33,18 +33,22 @@ class Courses(db.Model):
 
     @validates('course_id')
     def validate_course_id(self, key, course_id):
-        if len(course_id) > MIN_COURSE_LENGTH:
-            raise ValueError(f"Course ID should be {MIN_COURSE_LENGTH} character or less")
+        if len(course_id) == 0:
+            raise ValueError(f"Course ID should not be empty")
+        if len(course_id) > MAX_COURSE_LENGTH:
+            raise ValueError(f"Course ID should be {MAX_COURSE_LENGTH} character or less")
+        if not course_id.isalnum():
+            raise ValueError(f"Course ID cannot be empty or include special characters")
         return course_id
 
     @validates('course_name')
-    def validate_course_id(self, key, course_name):
+    def validate_course_name(self, key, course_name):
         if not course_name or len(course_name)==0:
             raise ValueError(f"Course name should not be empty")
         return course_name
 
     @validates('course_level')
-    def validate_course_id(self, key, course_level):
+    def validate_course_level(self, key, course_level):
         if course_level not in COURSE_LEVELS:
             raise ValueError("Invalid course level specified")
         return course_level
