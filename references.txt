@@ -1,0 +1,16 @@
+Reference for LLM Quiz Generation:
+- https://ai.google.dev/gemini-api/docs/structured-output
+- https://platform.openai.com/docs/guides/structured-outputs
+- https://python.useinstructor.com/#complex-schemas-validation
+
+Field validation:
+- https://docs.pydantic.dev/latest/api/functional_validators/#pydantic.functional_validators.field_validator
+
+
+Flask SQLAlchemy references:
+- https://flask-sqlalchemy.readthedocs.io/en/stable/quickstart/#define-models
+
+Flask Blueprint for better route Organization:
+- https://flask.palletsprojects.com/en/stable/blueprints/#my-first-blueprint
+
+

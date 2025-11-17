@@ -1,5 +1,5 @@
 from sqlalchemy.orm import mapped_column, relationship, validates
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float
 from sqlalchemy import sql
 from flask_sqlalchemy import SQLAlchemy
 from app.constants import *
@@ -112,30 +112,83 @@ class Tests(db.Model):
     test_id = mapped_column(Integer, primary_key=True)
     course_id = mapped_column(String(64), ForeignKey('courses.course_id'), nullable=False)
     title = mapped_column(String(128), nullable=False)
-    description = mapped_column(String(256), nullable=True)
-    difficulty_level = mapped_column(String(32), nullable=False) # e.g., Easy, Medium, Hard
+    description = mapped_column(String(512), nullable=True)
+    difficulty_level = mapped_column(String(32), nullable=False) # Options: Easy, Medium, Hard
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
     published_at = mapped_column(DateTime, nullable=True)
     duration_minutes = mapped_column(Integer, nullable=False)  # Duration of the test in minutes
+    total_questions = mapped_column(Integer, nullable=False)
     total_marks = mapped_column(Integer, nullable=False)
     passing_marks = mapped_column(Integer, nullable=False)
     created_by = mapped_column(Integer, ForeignKey('user.id'), nullable=False)  # Teacher who created the test
+    
     __table_args__ = (
         db.UniqueConstraint('course_id', 'title', name='uix_course_title'),
     )
+
+    @validates('course_id')
+    def validate_course_id(self, key, course_id):
+        course = Courses.query.filter_by(course_id=course_id).first()
+        if not course:
+            raise ValueError("Invalid course ID")
+        return course_id
+    
+    @validates('title')
+    def validate_title(self, key, title):
+        if len(title) == 0:
+            raise ValueError("Title cannot be empty")
+        return title
+    
+    @validates('difficulty_level')
+    def validate_difficulty_level(self, key, difficulty_level):
+        if difficulty_level.lower() not in ['easy', 'medium', 'hard']:
+            raise ValueError("Difficulty level should be one of Easy, Medium or Hard")
+        return difficulty_level
+    
+    @validates('duration_minutes')
+    def validate_duration(self, key, duration):
+        if not duration.isdigit():
+            raise ValueError("Duration should be an integer value")
+        return duration
+    
+    @validates('total_questions')
+    def validate_total_questions(self, key, total_questions):
+        if not total_questions.isdigit():
+            raise ValueError("Total marks should be an integer value")
+        if int(total_questions) > MAX_QUESTIONS:
+            raise ValueError(f"Maximum of {MAX_QUESTIONS} allowed")
+        return total_questions
+
+    @validates('total_marks')
+    def validate_total_marks(self, key, total_marks):
+        if not total_marks.isdigit():
+            raise ValueError("Total marks should be an integer value")
+        return total_marks
+    
+    @validates('passing_marks')
+    def validate_passing_marks(self, key, passing_marks):
+        if not passing_marks.isdigit():
+            raise ValueError("Passing marks should be an integer value")
+        return passing_marks
+
 class Questions(db.Model):
     __tablename__ = 'questions'
 
     question_id = mapped_column(Integer, primary_key=True)
     test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
-    question_text = mapped_column(String(512), nullable=False)
-    options = mapped_column(String(512), nullable=False)
-    correct_options = mapped_column(String(32), nullable=False)  # e.g., 'A', 'B', 'C', 'D' or ['A','B'] for multiple correct options
-    marks = mapped_column(Integer, nullable=False)
+    question_text = mapped_column(String(1024), nullable=False)
+    options = mapped_column(String(1024), nullable=True)
+    correct_answer = mapped_column(String(32), nullable=False)  # e.g., 'A', 'B', 'C', 'D' or ['A','B'] for multiple correct options
+    tags = mapped_column(String(512), nullable=False)
+    marks = mapped_column(Float, nullable=False)
+    difficulty_level = mapped_column(String(32), nullable=False)
+    question_type = mapped_column(String(32), nullable=False)
+
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
-    __table_args__ = (
-        db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
-    )
+    # __table_args__ = (
+    #     db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
+    # )
+
 class Student_Test_Question_Attempt(db.Model):
     __tablename__ = 'student_test_question_attempt'
 

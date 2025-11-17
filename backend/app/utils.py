@@ -1,5 +1,5 @@
 from app.constants import *
-import datetime
+import datetime, random
 
 def get_current_semester_and_year():
     now = datetime.datetime.now()
@@ -11,3 +11,59 @@ def get_current_semester_and_year():
         semester = f"Fall_{year}"
     
     return semester, str(year)
+
+def get_question_type():
+
+    r = random.random()
+    if r > 0.4:
+        return 'msq' #mcq
+    elif r > 0.1:
+        return 'msq' #msq
+    else:
+        return 'msq' #nat
+
+def get_question_level(test_level):
+
+    r = random.random()
+    
+    if test_level.lower() == 'easy':
+        if r > 0.9:
+            return 'hard'
+        elif r > 0.7:
+            return 'medium'
+        else:
+            return 'easy'
+    
+    if test_level.lower() == 'medium':
+        if r > 0.8:
+            return 'hard'
+        elif r > 0.3:
+            return 'medium'
+        else:
+            return 'easy'
+    
+    # Else test level hard
+    if r > 0.6:
+        return 'hard'
+    elif r > 0.2:
+        return 'medium'
+    else:
+        return 'easy'
+    
+def get_mark_distribution(difficulty_list, total_marks):
+
+    question_points = []
+    for i in difficulty_list:
+        if i.lower() == 'easy':
+            question_points.append(1)
+        elif i.lower() == 'medium':
+            question_points.append(2)
+        else:
+            question_points.append(3)
+    
+    total_points = sum(question_points)
+    weightage = [p/total_points for p in question_points]
+    marks_per_question = [round(total_marks*w, 1) for w in weightage]
+    marks_per_question[-1] = total_marks - sum(marks_per_question[:-1])
+
+    return marks_per_question

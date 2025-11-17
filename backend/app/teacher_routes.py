@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models import User, Courses, Teacher_Courses_Map
+from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions
 from functools import wraps
 from app.utils import get_current_semester_and_year
+from app.quizgen import generate_quiz
+import json
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -119,3 +121,58 @@ def list_courses(user):
             })
 
     return jsonify(courses_list), 200
+
+@teacher_bp.route('/create_quiz', methods=['POST'])
+@teacher_required
+def create_quiz(user):
+
+    data = request.get_json()
+    course_id = data.get('course_id', None)
+    title = data.get('title', None)
+    description = data.get('description', None)
+    difficulty_level = data.get('difficulty_level', None)
+    duration = data.get('duration', None)
+    total_questions = data.get('total_questions', None)
+    total_marks = data.get('total_marks', 100)
+    passing_marks = data.get('passing_marks', 40)
+
+    try:
+        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id)
+        db.session.add(test_obj)
+        db.session.flush()
+
+        test_object = Tests.query.filter_by(course_id=course_id, title=title).first()
+        course_obj = Courses.query.filter_by(course_id=course_id).first()
+
+        result = generate_quiz(course_obj.course_name, course_obj.course_level, course_obj.course_objectives, title, description, difficulty_level, total_questions, total_marks)
+        question_objects = []
+  
+        for item in result:
+
+            options = json.dumps(item['options'])
+            tags = json.dumps(item['tags'])
+            correct_answer = json.dumps(item['correct_answer'])
+
+            obj = Questions(
+                test_id=test_object.test_id, 
+                question_text=item['question_text'],
+                options=options,
+                correct_answer=correct_answer,
+                tags=tags,
+                marks=item['marks'],
+                difficulty_level=item['difficulty_level'],
+                question_type=item['question_type']
+            )
+            question_objects.append(obj)
+        
+        db.session.add_all(question_objects)
+        db.session.commit()
+
+        return jsonify({'message': f'Test {title} created successfully.'}), 201
+    
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Could not create quiz. Exception: {str(e)}"}), 500
