@@ -1,28 +1,34 @@
-import React, { useState } from 'react';
-import Modal from '../Utils/Modal';
-import InputField from '../Utils/InputField';
-import SelectField from '../Utils/SelectField';
-import Button from '../Utils/Button';
+import React, { useState } from "react";
+import Modal from "../Utils/Modal";
+import InputField from "../Utils/InputField";
+import SelectField from "../Utils/SelectField";
+import Button from "../Utils/Button";
 
 const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
   const [quizData, setQuizData] = useState({
-    title: '',
-    description: '',
-    difficulty_level: 'Medium',
+    title: "",
+    description: "",
+    difficulty_level: "Medium",
     duration_minutes: 60,
     total_marks: 100,
-    passing_marks: 40
+    total_questions: 10,
+    passing_marks: 40,
   });
 
   const handleSubmit = () => {
-    onSubmit(quizData);
+    onSubmit({
+      ...quizData,
+      course_id: courseId,
+    });
+
     setQuizData({
-      title: '',
-      description: '',
-      difficulty_level: 'Medium',
+      title: "",
+      description: "",
+      difficulty_level: "Medium",
       duration_minutes: 60,
       total_marks: 100,
-      passing_marks: 40
+      total_questions: 10,
+      passing_marks: 40,
     });
   };
 
@@ -32,26 +38,47 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
         <InputField
           label="Quiz Title"
           value={quizData.title}
-          onChange={(e) => setQuizData({...quizData, title: e.target.value})}
+          onChange={(e) => setQuizData({ ...quizData, title: e.target.value })}
           required
         />
         <InputField
           label="Description"
           value={quizData.description}
-          onChange={(e) => setQuizData({...quizData, description: e.target.value})}
+          onChange={(e) =>
+            setQuizData({ ...quizData, description: e.target.value })
+          }
           rows="2"
         />
         <SelectField
           label="Difficulty Level"
           value={quizData.difficulty_level}
-          onChange={(e) => setQuizData({...quizData, difficulty_level: e.target.value})}
-          options={['Easy', 'Medium', 'Hard']}
+          onChange={(e) =>
+            setQuizData({ ...quizData, difficulty_level: e.target.value })
+          }
+          options={["Easy", "Medium", "Hard"]}
         />
         <InputField
           label="Duration (minutes)"
           type="number"
           value={quizData.duration_minutes}
-          onChange={(e) => setQuizData({...quizData, duration_minutes: parseInt(e.target.value)})}
+          onChange={(e) =>
+            setQuizData({
+              ...quizData,
+              duration_minutes: parseInt(e.target.value),
+            })
+          }
+          required
+        />
+        <InputField
+          label="Total Questions"
+          type="number"
+          value={quizData.total_questions}
+          onChange={(e) =>
+            setQuizData({
+              ...quizData,
+              total_questions: parseInt(e.target.value),
+            })
+          }
           required
         />
         <div className="grid grid-cols-2 gap-4">
@@ -59,14 +86,24 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
             label="Total Marks"
             type="number"
             value={quizData.total_marks}
-            onChange={(e) => setQuizData({...quizData, total_marks: parseInt(e.target.value)})}
+            onChange={(e) =>
+              setQuizData({
+                ...quizData,
+                total_marks: parseInt(e.target.value),
+              })
+            }
             required
           />
           <InputField
             label="Passing Marks"
             type="number"
             value={quizData.passing_marks}
-            onChange={(e) => setQuizData({...quizData, passing_marks: parseInt(e.target.value)})}
+            onChange={(e) =>
+              setQuizData({
+                ...quizData,
+                passing_marks: parseInt(e.target.value),
+              })
+            }
             required
           />
         </div>

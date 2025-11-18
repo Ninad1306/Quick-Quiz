@@ -90,8 +90,16 @@ const MainPage = ({ user, onLogout }) => {
     setSelectedCourse(null);
   };
 
-  const handleAddQuiz = (quizData) => {
-    console.log("Creating quiz:", quizData);
+  const handleAddQuiz = async (quizData) => {
+    await axios.post(
+      `${API_BASE_URL}/teacher/create_quiz`,
+      quizData,
+      {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+      }
+    );
     setShowAddQuizModal(false);
   };
 
