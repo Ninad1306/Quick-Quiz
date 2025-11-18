@@ -148,27 +148,27 @@ class Tests(db.Model):
     
     @validates('duration_minutes')
     def validate_duration(self, key, duration):
-        if not duration.isdigit():
+        if not isinstance(duration, int):
             raise ValueError("Duration should be an integer value")
         return duration
     
     @validates('total_questions')
     def validate_total_questions(self, key, total_questions):
-        if not total_questions.isdigit():
+        if not isinstance(total_questions, int):
             raise ValueError("Total marks should be an integer value")
-        if int(total_questions) > MAX_QUESTIONS:
+        if total_questions > MAX_QUESTIONS:
             raise ValueError(f"Maximum of {MAX_QUESTIONS} allowed")
         return total_questions
 
     @validates('total_marks')
     def validate_total_marks(self, key, total_marks):
-        if not total_marks.isdigit():
+        if not isinstance(total_marks, int):
             raise ValueError("Total marks should be an integer value")
         return total_marks
     
     @validates('passing_marks')
     def validate_passing_marks(self, key, passing_marks):
-        if not passing_marks.isdigit():
+        if not isinstance(passing_marks, int):
             raise ValueError("Passing marks should be an integer value")
         return passing_marks
     

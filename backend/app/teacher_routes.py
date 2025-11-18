@@ -131,7 +131,7 @@ def create_quiz(user):
     title = data.get('title', None)
     description = data.get('description', None)
     difficulty_level = data.get('difficulty_level', None)
-    duration = data.get('duration', None)
+    duration_minutes = data.get('duration_minutes', None)
     total_questions = data.get('total_questions', None)
     total_marks = data.get('total_marks', 100)
     passing_marks = data.get('passing_marks', 40)
@@ -141,7 +141,7 @@ def create_quiz(user):
         if course_id not in my_courses:
             raise ValueError(f"Course {course_id} not found for current user.")
 
-        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="NotPublished")
+        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration_minutes, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="NotPublished")
         db.session.add(test_obj)
         db.session.flush()
 
