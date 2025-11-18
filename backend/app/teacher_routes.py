@@ -137,6 +137,10 @@ def create_quiz(user):
     passing_marks = data.get('passing_marks', 40)
 
     try:
+        my_courses = {tc_map.course_id for tc_map in Teacher_Courses_Map.query.filter_by(teacher_id=user.id).all()}
+        if course_id not in my_courses:
+            raise ValueError(f"Course {course_id} not found for current user.")
+
         test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="NotPublished")
         db.session.add(test_obj)
         db.session.flush()

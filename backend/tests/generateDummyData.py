@@ -25,7 +25,7 @@ DATA = [
             },
 
             {
-                "course_id": "G9_PHY",
+                "course_id": "G9PHY",
                 "course_name": "Grade 9 Physics",
                 "course_level": "Grade 9",
                 "course_objectives": "Motion, Force and Laws of Motion, Gravitation, Work and Energy, Sound, Behaviour of Light, Reflection and Refraction, Heat, Energy Conservation, Pressure in Fluids, Buoyancy.",
@@ -54,7 +54,7 @@ DATA = [
             },
 
             {
-                "course_id": "G4_ENG",
+                "course_id": "G4ENG",
                 "course_name": "Grade 4 English",
                 "course_level": "Grade 4",
                 "course_objectives": "Parts of Speech (Nouns, Pronouns, Verbs, Adjectives, Adverbs, Prepositions), Tenses (Simple Present, Past, Future), Sentence Types and Structure, Punctuation (Full stop, Comma, Question mark, Exclamation mark, Apostrophe), Synonyms and Antonyms, Homophones/Homonyms, Prefixes and Suffixes, Singular-Plural, Gender, Articles (a/an/the), Subject-Verb Agreement, Paragraph Writing, Letter Writing (Informal), Story Writing, Picture Composition, Comprehension Passages, Poem Appreciation, Notice Writing, Message Writing, Dictionary Skills, Proverbs, Idioms, Active-Passive Voice (introduction), Direct-Indirect Speech (basic), Conjunctions, Degrees of Comparison, Spelling Rules, Vocabulary Building.",
