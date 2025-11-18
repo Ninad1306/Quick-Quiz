@@ -186,4 +186,15 @@ def create_quiz(user):
 def list_quiz(user):
 
     tests_obj = Tests.query.filter_by(created_by=user.id).order_by(Tests.created_at.desc()).all()
-    return jsonify([test.to_dict() for test in tests_obj])
+    return jsonify([test.to_dict() for test in tests_obj]), 200
+
+@teacher_bp.route('/list_questions/<quiz_id>', methods=['GET'])
+@teacher_required
+def list_questions(user, quiz_id):
+
+    test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
+    if not test_obj:
+        return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+    
+    questions_obj = Questions.query.filter_by(test_id=quiz_id).all()
+    return jsonify([question.to_dict() for question in questions_obj]), 200

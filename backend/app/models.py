@@ -3,7 +3,7 @@ from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float
 from sqlalchemy import sql
 from flask_sqlalchemy import SQLAlchemy
 from app.constants import *
-import re
+import re, json
 
 db = SQLAlchemy()
 
@@ -209,9 +209,23 @@ class Questions(db.Model):
     question_type = mapped_column(String(32), nullable=False)
 
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
-    # __table_args__ = (
-    #     db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
-    # )
+    __table_args__ = (
+        db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
+    )
+
+    def to_dict(self):
+        return {
+            "question_id": self.question_id,
+            "test_id": self.test_id,
+            "question_text": self.question_text,
+            "options": json.loads(self.options),
+            "difficulty_level": self.difficulty_level,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "correct_answer": json.loads(self.correct_answer),
+            "tags": json.loads(self.tags),
+            "marks": self.marks,
+            "question_type": self.question_type
+        }
 
 class Student_Test_Question_Attempt(db.Model):
     __tablename__ = 'student_test_question_attempt'
