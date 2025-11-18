@@ -44,8 +44,9 @@ cd quick-quiz-frontend
 npm run dev
 ```
 
-Start the backend using:
+Start the backend after adding the appropriate API key:
 ```sh
 cd backend
+export GEMINI_API_KEY=""
 flask --debug --app app run
 ```

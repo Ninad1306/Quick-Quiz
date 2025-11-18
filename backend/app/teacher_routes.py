@@ -1,11 +1,12 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db
+from app import db, scheduler
 from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions
 from functools import wraps
-from app.utils import get_current_semester_and_year
+from app.utils import get_current_semester_and_year, activate_test, deactivate_test
 from app.quizgen import generate_quiz
-import json
+import json, pytz
+from datetime import datetime, timedelta
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -141,7 +142,7 @@ def create_quiz(user):
         if course_id not in my_courses:
             raise ValueError(f"Course {course_id} not found for current user.")
 
-        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="NotPublished")
+        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="not_published")
         db.session.add(test_obj)
         db.session.flush()
 
@@ -198,3 +199,65 @@ def list_questions(user, quiz_id):
     
     questions_obj = Questions.query.filter_by(test_id=quiz_id).all()
     return jsonify([question.to_dict() for question in questions_obj]), 200
+
+@teacher_bp.route('/publish_quiz/<quiz_id>', methods=['POST'])
+@teacher_required
+def publish_quiz(user, quiz_id):
+
+    try:
+        data = request.get_json()
+        start_time_str = data["start_time"]
+        start_time = datetime.fromisoformat(start_time_str.replace("Z", "+00:00")) # We assume time coming from frontend is in UTC of format "2025-11-18T14:30:00Z"
+        now = datetime.now()
+
+        if start_time <= now:
+            raise ValueError(f"Start time has already passed.")
+        
+        local_tz = pytz.timezone("Asia/Kolkata")
+        start_time = start_time.astimezone(local_tz)
+
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).with_for_update().first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+
+        test_obj.status = 'published'
+        test_obj.start_time = start_time
+
+        db.session.commit()
+        
+        duration = test_obj.duration_minutes
+        end_time = start_time + timedelta(minutes=int(duration))
+
+        scheduler.add_job(activate_test, 'date', id=f"activate_test_{quiz_id}", run_date=start_time, args=[quiz_id], replace_existing=True)
+        scheduler.add_job(deactivate_test, 'date', id=f"deactivate_test_{quiz_id}", run_date=end_time, args=[quiz_id], replace_existing=True)
+
+        return jsonify({'message':'Test published successfully.'}), 200
+    
+    except Exception as e:
+        return jsonify({'error':f'Exception occurred: {e}'}), 400
+    
+@teacher_bp.route('/modify_quiz/<quiz_id>', methods=['POST'])
+@teacher_required
+def modify_quiz(user, quiz_id):
+
+    try:
+        data = request.get_json()
+        extra_time = data["extra_time"]
+
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).with_for_update().first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+
+        test_obj.duration_minutes = str(int(test_obj.duration_minutes) + int(extra_time))
+
+        db.session.commit()
+
+        start_time = test_obj.start_time
+        end_time = start_time + timedelta(minutes=int(extra_time))
+
+        scheduler.modify_job(f"deactivate_test_{quiz_id}", next_run_time=end_time)
+
+        return jsonify({'message':'Test end time modified successfully.'}), 200
+    
+    except Exception as e:
+        return jsonify({'error':f'Exception occurred: {e}'}), 400

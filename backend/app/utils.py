@@ -1,4 +1,6 @@
 from app.constants import *
+from app import db, app
+from app.models import Tests
 import datetime, random
 
 def get_current_semester_and_year():
@@ -67,3 +69,17 @@ def get_mark_distribution(difficulty_list, total_marks):
     marks_per_question[-1] = total_marks - sum(marks_per_question[:-1])
 
     return marks_per_question
+
+def activate_test(quiz_id):
+
+    with app.app_context():
+        test_obj = Tests.query.filter_by(test_id=quiz_id).with_for_update().first()
+        test_obj.status = 'active'
+        db.session.commit()
+
+def deactivate_test(quiz_id):
+
+    with app.app_context():
+        test_obj = Tests.query.filter_by(test_id=quiz_id).with_for_update().first()
+        test_obj.status = 'completed'
+        db.session.commit()

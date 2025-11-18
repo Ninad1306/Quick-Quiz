@@ -3,6 +3,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from app.models import db
+from apscheduler.schedulers.background import BackgroundScheduler
 import os
 
 app = Flask(__name__)
@@ -18,6 +19,9 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 cors = CORS(app)
+
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 from app.setup import setup_db
 setup_db(app, db)

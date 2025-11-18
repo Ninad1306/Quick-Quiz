@@ -115,13 +115,13 @@ class Tests(db.Model):
     description = mapped_column(String(512), nullable=True)
     difficulty_level = mapped_column(String(32), nullable=False) # Options: Easy, Medium, Hard
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
-    published_at = mapped_column(DateTime, nullable=True)
+    start_time = mapped_column(DateTime, nullable=True)
     duration_minutes = mapped_column(Integer, nullable=False)  # Duration of the test in minutes
     total_questions = mapped_column(Integer, nullable=False)
     total_marks = mapped_column(Integer, nullable=False)
     passing_marks = mapped_column(Integer, nullable=False)
     created_by = mapped_column(Integer, ForeignKey('user.id'), nullable=False)  # Teacher who created the test
-    status = mapped_column(String(32), nullable=False) # One of NotPublished, Active, Completed
+    status = mapped_column(String(32), nullable=False) # One of NotPublished, Published, Active, Completed
     
     __table_args__ = (
         db.UniqueConstraint('course_id', 'title', name='uix_course_title'),
@@ -174,8 +174,8 @@ class Tests(db.Model):
     
     @validates('status')
     def validate_status(self, key, status):
-        if status not in ['NotPublished', 'Active', 'Completed']:
-            raise ValueError("Status must be one of NotPublished, Active, Completed")
+        if status not in ['not_published', 'published', 'active', 'completed']:
+            raise ValueError("Status must be one of not_published, published, active, completed")
         return status
     
     def to_dict(self):
@@ -186,7 +186,7 @@ class Tests(db.Model):
             "description": self.description,
             "difficulty_level": self.difficulty_level,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
             "duration_minutes": self.duration_minutes,
             "total_questions": self.total_questions,
             "total_marks": self.total_marks,
