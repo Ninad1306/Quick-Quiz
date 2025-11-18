@@ -153,7 +153,7 @@ def create_quiz(user):
   
         for item in result:
 
-            options = json.dumps(item['options'])
+            options = json.dumps(item['options']) if 'options' in item.keys() else ''
             tags = json.dumps(item['tags'])
             correct_answer = json.dumps(item['correct_answer'])
 

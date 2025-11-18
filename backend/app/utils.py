@@ -20,7 +20,7 @@ def get_question_type():
     elif r > 0.1:
         return 'msq'
     else:
-        return 'mcq' # originially nat, but defaulting to mcq until nat is fixed
+        return 'nat'
 
 def get_question_level(test_level):
 

@@ -1,6 +1,6 @@
 import instructor
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Any
+from typing import List, Any, Optional
 from app.utils import get_question_type, get_question_level, get_mark_distribution
 
 class Option(BaseModel):
@@ -42,19 +42,17 @@ class MultipleSelectQuestion(BaseModel):
 class NumericalAnswerQuestion(BaseModel):
 
     question_text: str = Field(..., min_length=1, description='The text of the numerical answer type question which has a numeric answer.')
-    correct_answer: Any = Field(..., min_length=1, description='The correct numeric answer.')
+    options: Optional[List[str]] = Field(..., description='Placeholder for correct formatting. No inhererent use.')
+    correct_answer: int = Field(..., description='The correct numeric answer.')
     tags: List[str] = Field(..., min_length=1, description='The topic tags associated with question.')
 
     @field_validator('correct_answer')
     def validate_correct_answer(cls, correct_answer):
         
-        if isinstance(correct_answer, (int, float)):
+        if isinstance(correct_answer, (int)):
             return correct_answer
         
-        if isinstance(correct_answer, str) and correct_answer.replace(".", "", 1).isdigit():
-            return correct_answer
-        
-        raise ValueError(f"correct_answer should be a integer or floating point number.")
+        raise ValueError(f"correct_answer should be a integer.")
 
 def generate_quiz(course_name, course_level, course_objectives, title, description, difficulty_level, total_questions, total_marks):
 
@@ -116,7 +114,7 @@ def generate_quiz(course_name, course_level, course_objectives, title, descripti
                 "The question should be a numeric answer type question with single correct answer."
                 "The response should include: question_text, correct_answer and tags."
                 "question_text is a string dictating the question."
-                "correct_answer should be a number."
+                "correct_answer should strictly be an integer, no decimals allowed. Format the question accordingly."
                 "tags is a list of strings that indicate the topic to which question belongs. Make the tags concise and general so that they can be aggregated later."
             )
             model = NumericalAnswerQuestion
