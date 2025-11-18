@@ -121,6 +121,7 @@ class Tests(db.Model):
     total_marks = mapped_column(Integer, nullable=False)
     passing_marks = mapped_column(Integer, nullable=False)
     created_by = mapped_column(Integer, ForeignKey('user.id'), nullable=False)  # Teacher who created the test
+    status = mapped_column(String(32), nullable=False) # One of NotPublished, Active, Completed
     
     __table_args__ = (
         db.UniqueConstraint('course_id', 'title', name='uix_course_title'),
@@ -170,6 +171,29 @@ class Tests(db.Model):
         if not passing_marks.isdigit():
             raise ValueError("Passing marks should be an integer value")
         return passing_marks
+    
+    @validates('status')
+    def validate_status(self, key, status):
+        if status not in ['NotPublished', 'Active', 'Completed']:
+            raise ValueError("Status must be one of NotPublished, Active, Completed")
+        return status
+    
+    def to_dict(self):
+        return {
+            "test_id": self.test_id,
+            "course_id": self.course_id,
+            "title": self.title,
+            "description": self.description,
+            "difficulty_level": self.difficulty_level,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "duration_minutes": self.duration_minutes,
+            "total_questions": self.total_questions,
+            "total_marks": self.total_marks,
+            "passing_marks": self.passing_marks,
+            "created_by": self.created_by,
+            "status": self.status
+        }
 
 class Questions(db.Model):
     __tablename__ = 'questions'

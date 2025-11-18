@@ -7,16 +7,59 @@ DATA = [
     {
         "user_details": {"name": "A", "email_id": "A@a.com", "role": "teacher", "password": "testABC12@"},
         "course_details": [
-            {"course_id": "CS725", "course_name": "FML", "course_level": "Postgraduate", "course_objectives": "", "offered_at": "Fall_2025"},
-            {"course_id": "CS747", "course_name": "FILA", "course_level": "Postgraduate", "course_objectives": "", "offered_at": "Fall_2025"}
+            
+            {
+                "course_id": "CS725",
+                "course_name": "Foundations of Machine Learning",
+                "course_level": "Postgraduate",
+                "course_objectives": "Supervised learning: decision trees, nearest neighbor classifiers, generative classifiers like naive Bayes, linear discriminate analysis, loss regularization framework for classification, Support vector Machines. Regression methods: least-square regression, kernel regression, regression trees. Unsupervised learning: k-means, hierarchical, EM, non-negative matrix factorization, rate distortion theory.", 
+                "offered_at": "Fall_2025"
+            },
+            
+            {
+                "course_id": "CS747",
+                "course_name": "Foundation of Intelligent Learning Agents",
+                "course_level": "Postgraduate",
+                "course_objectives": "Agency, intelligence, and learning. Exploration and multi-armed bandits. Markov Decision Problems and planning. Reinforcement learning. Search. Multi-agent systems and multi-agent learning. Case studies",
+                "offered_at": "Fall_2025"
+            },
+
+            {
+                "course_id": "G9_PHY",
+                "course_name": "Grade 9 Physics",
+                "course_level": "Grade 9",
+                "course_objectives": "Motion, Force and Laws of Motion, Gravitation, Work and Energy, Sound, Behaviour of Light, Reflection and Refraction, Heat, Energy Conservation, Pressure in Fluids, Buoyancy.",
+                "offered_at": "2025"
+            }
         ]
     },
 
     {
         "user_details": {"name": "B", "email_id": "B@a.com", "role": "teacher", "password": "testXYZ34$"},
         "course_details": [
-            {"course_id": "CS699", "course_name": "SL", "course_level": "Postgraduate", "course_objectives": "", "offered_at": "Fall_2025"},
-            {"course_id": "CS791", "course_name": "PFAI", "course_level": "Postgraduate", "course_objectives": "", "offered_at": "Fall_2025"},
+            {
+                "course_id": "CS699",
+                "course_name": "Software Lab",
+                "course_level": "Postgraduate",
+                "course_objectives": "Vim/emacs, HTML, CSS. Preparing reports and presentations using latex, beamer, drawing software (e.g. inkscape, xfig, open-office), and graph plotting software (e.g., pyplot, gnuplot). Unix basics: shell, file system, permissions, process hierarchy, process monitoring, ssh, rsync. Unix tools: e.g. awk, sed, grep, find, head, tail, tar, cut, sort, Bash scripting: I/O redirection, pipes. Programming using scripting language (e.g. python).",
+                "offered_at": "Fall_2025"
+            },
+
+            {
+                "course_id": "CS601",
+                "course_name": "Algorithms and Complexity",
+                "course_level": "Postgraduate",
+                "course_objectives": "Techniques for the Design and Analysis of Algorithms. Formal models of computation, time and space complexity, Theory of NP-Completeness, Approximability of NP-Hard problems. Introduction to parallel, randomized and on-line algorithms.",
+                "offered_at": "Fall_2025"
+            },
+
+            {
+                "course_id": "G4_ENG",
+                "course_name": "Grade 4 English",
+                "course_level": "Grade 4",
+                "course_objectives": "Parts of Speech (Nouns, Pronouns, Verbs, Adjectives, Adverbs, Prepositions), Tenses (Simple Present, Past, Future), Sentence Types and Structure, Punctuation (Full stop, Comma, Question mark, Exclamation mark, Apostrophe), Synonyms and Antonyms, Homophones/Homonyms, Prefixes and Suffixes, Singular-Plural, Gender, Articles (a/an/the), Subject-Verb Agreement, Paragraph Writing, Letter Writing (Informal), Story Writing, Picture Composition, Comprehension Passages, Poem Appreciation, Notice Writing, Message Writing, Dictionary Skills, Proverbs, Idioms, Active-Passive Voice (introduction), Direct-Indirect Speech (basic), Conjunctions, Degrees of Comparison, Spelling Rules, Vocabulary Building.",
+                "offered_at": "2025"
+            }
         ]
     },
     

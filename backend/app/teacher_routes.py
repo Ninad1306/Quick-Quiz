@@ -137,7 +137,7 @@ def create_quiz(user):
     passing_marks = data.get('passing_marks', 40)
 
     try:
-        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id)
+        test_obj = Tests(course_id=course_id, title=title, description=description, difficulty_level=difficulty_level, duration_minutes=duration, total_questions=total_questions, total_marks=total_marks, passing_marks=passing_marks, created_by=user.id, status="NotPublished")
         db.session.add(test_obj)
         db.session.flush()
 
@@ -176,3 +176,10 @@ def create_quiz(user):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Could not create quiz. Exception: {str(e)}"}), 500
+
+@teacher_bp.route('/list_quiz', methods=['GET'])
+@teacher_required
+def list_quiz(user):
+
+    tests_obj = Tests.query.filter_by(created_by=user.id).order_by(Tests.created_at.desc()).all()
+    return jsonify([test.to_dict() for test in tests_obj])
