@@ -4,11 +4,24 @@ import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 import Button from "../Utils/Button";
 
-const Course = ({ course, quizzes, userRole, onBack, onAddQuiz, onViewAnalytics }) => {
-  
-
+const Course = ({
+  course,
+  quizzes,
+  userRole,
+  onSelectQuiz,
+  onBack,
+  onAddQuiz,
+  onViewAnalytics,
+}) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <button
+        onClick={onBack}
+        className="mb-4 text-blue-600 hover:text-blue-800 flex items-center gap-2"
+      >
+        ← Back
+      </button>
+
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -108,7 +121,7 @@ const Course = ({ course, quizzes, userRole, onBack, onAddQuiz, onViewAnalytics 
                 </div>
 
                 <Button
-                  onClick={() => console.log("View quiz:", quiz.test_id)}
+                  onClick={() => onSelectQuiz(quiz, userRole)}
                   variant="primary"
                   className="w-full"
                 >

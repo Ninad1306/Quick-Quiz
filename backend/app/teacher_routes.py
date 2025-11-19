@@ -335,7 +335,7 @@ def modify_quiz(user, quiz_id):
             
             db.session.add_all(question_objects)
         
-        if old_num_questions > new_num_questions:
+        elif old_num_questions > new_num_questions:
 
             question_objs = Questions.query.filter_by(test_id=quiz_id).limit(old_num_questions-new_num_questions).all()
             for q in question_objs:
