@@ -161,12 +161,12 @@ def create_quiz(user):
             obj = Questions(
                 test_id=test_object.test_id, 
                 question_text=item['question_text'],
+                question_type=item['question_type'],
                 options=options,
                 correct_answer=correct_answer,
                 tags=tags,
                 marks=item['marks'],
-                difficulty_level=item['difficulty_level'],
-                question_type=item['question_type']
+                difficulty_level=item['difficulty_level']
             )
             question_objects.append(obj)
         
@@ -176,9 +176,11 @@ def create_quiz(user):
         return jsonify({'message': f'Test {title} created successfully.'}), 201
     
     except ValueError as e:
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 400
     
     except Exception as e:
+        print(traceback.format_exc())
         db.session.rollback()
         return jsonify({"error": f"Could not create quiz. Exception: {str(e)}"}), 500
 
