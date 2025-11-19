@@ -3,9 +3,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, scheduler
 from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions
 from functools import wraps
-from app.utils import get_current_semester_and_year, activate_test, deactivate_test
+from app.utils import get_current_semester_and_year, activate_test, deactivate_test, recalibrate_marks
 from app.quizgen import generate_quiz
-import json, pytz
+import json, pytz, traceback
 from datetime import datetime, timedelta
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
@@ -236,9 +236,9 @@ def publish_quiz(user, quiz_id):
     except Exception as e:
         return jsonify({'error':f'Exception occurred: {e}'}), 400
     
-@teacher_bp.route('/modify_quiz/<quiz_id>', methods=['POST'])
+@teacher_bp.route('/modify_quiz_duration/<quiz_id>', methods=['POST'])
 @teacher_required
-def modify_quiz(user, quiz_id):
+def modify_quiz_duration(user, quiz_id):
 
     try:
         data = request.get_json()
@@ -274,7 +274,6 @@ def delete_questions(user, quiz_id):
         
         data = request.get_json()
         question_ids = data['question_ids']
-        print(question_ids)
 
         quest_objs = Questions.query.filter_by(test_id=quiz_id).all()
         test_question_ids = [obj.question_id for obj in quest_objs]
@@ -288,4 +287,68 @@ def delete_questions(user, quiz_id):
         return jsonify({'message': 'Deletion successful'}), 200
 
     except Exception as e:
+        return jsonify({'error': f'Exception occurred: {e}'}), 400
+
+@teacher_bp.route('/modify_quiz/<quiz_id>', methods=['POST'])
+@teacher_required
+def modify_quiz(user, quiz_id):
+
+    try:
+        
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
+        
+        quiz_update_data = request.get_json()
+        # quiz_update_data = data['quiz_obj']
+        test_obj = Tests.query.get(quiz_id)
+        
+        old_num_questions = int(test_obj.total_questions)
+        new_num_questions = int(quiz_update_data['total_questions'])
+        new_total_marks = quiz_update_data['total_marks'] if quiz_update_data['total_marks'] else test_obj.total_marks
+
+        if old_num_questions < new_num_questions:
+
+            course_obj = Courses.query.filter_by(course_id=test_obj.course_id).first()
+            result = generate_quiz(course_obj.course_name, course_obj.course_level, course_obj.course_objectives, test_obj.title, test_obj.description, test_obj.difficulty_level, new_num_questions-old_num_questions, new_total_marks)
+            question_objects = []
+    
+            for item in result:
+
+                options = json.dumps(item['options']) if 'options' in item.keys() else ''
+                tags = json.dumps(item['tags'])
+                correct_answer = json.dumps(item['correct_answer'])
+
+                obj = Questions(
+                    test_id=quiz_id, 
+                    question_text=item['question_text'],
+                    options=options,
+                    correct_answer=correct_answer,
+                    tags=tags,
+                    marks=item['marks'],
+                    difficulty_level=item['difficulty_level'],
+                    question_type=item['question_type']
+                )
+                question_objects.append(obj)
+            
+            db.session.add_all(question_objects)
+        
+        if old_num_questions > new_num_questions:
+
+            question_objs = Questions.query.filter_by(test_id=quiz_id).limit(old_num_questions-new_num_questions).all()
+            for q in question_objs:
+                db.session.delete(q)
+
+        recalibrate_marks(quiz_id, new_total_marks)
+
+        for field in ["title", "description", "difficulty_level", "duration_minutes", "total_questions", "total_marks", "passing_marks"]: # ["question_text", "options", "correct_answer", "tags", "marks"]
+            if field in quiz_update_data:
+                setattr(test_obj, field, quiz_update_data[field])
+        
+        db.session.commit()
+
+        return jsonify({'message': 'Modified quiz object successfully.'}), 200
+        
+    except Exception as e:
+        print(traceback.format_exc())
         return jsonify({'error': f'Exception occurred: {e}'}), 400

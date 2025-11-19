@@ -1,6 +1,6 @@
 from app.constants import *
 from app import db, app
-from app.models import Tests
+from app.models import Tests, Questions
 import datetime, random
 
 def get_current_semester_and_year():
@@ -82,4 +82,17 @@ def deactivate_test(quiz_id):
     with app.app_context():
         test_obj = Tests.query.filter_by(test_id=quiz_id).with_for_update().first()
         test_obj.status = 'completed'
+        db.session.commit()
+
+def recalibrate_marks(quiz_id, total_marks):
+
+    with app.app_context():
+        question_objs = Questions.query.filter_by(test_id=quiz_id).all()
+        difficulty_list = [obj.difficulty_level for obj in question_objs]
+        
+        question_marks_list = get_mark_distribution(difficulty_list, int(total_marks))
+        
+        for obj, new_marks in zip(question_objs, question_marks_list):
+            obj.marks = new_marks
+        
         db.session.commit()
