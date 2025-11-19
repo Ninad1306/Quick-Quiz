@@ -251,7 +251,8 @@ class Questions(db.Model):
         
         if isinstance(correct_answer, str):
             try:
-                correct_answer = json.loads(correct_answer)
+                if len(correct_answer) > 1:
+                    correct_answer = json.loads(correct_answer)
             except Exception as e:
                 raise ValueError(f"Failed to convert correct_answer to JSON: {e}")
 

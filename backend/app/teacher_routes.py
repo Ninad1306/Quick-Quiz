@@ -309,7 +309,7 @@ def modify_quiz(user, quiz_id):
         
         old_num_questions = int(test_obj.total_questions)
         new_num_questions = int(quiz_update_data['total_questions']) + old_num_questions
-        new_total_marks = quiz_update_data['total_marks'] if quiz_update_data['total_marks'] else test_obj.total_marks
+        new_total_marks = quiz_update_data['total_marks'] if 'total_marks' in quiz_update_data.keys() else test_obj.total_marks
 
         if old_num_questions < new_num_questions:
 
@@ -321,7 +321,7 @@ def modify_quiz(user, quiz_id):
 
                 options = json.dumps(item['options']) if 'options' in item.keys() else ''
                 tags = json.dumps(item['tags'])
-                correct_answer = json.dumps(item['correct_answer'])
+                correct_answer = item['correct_answer'] if item['question_type'] == 'nat' else json.dumps(item['correct_answer'])
 
                 obj = Questions(
                     test_id=quiz_id, 
