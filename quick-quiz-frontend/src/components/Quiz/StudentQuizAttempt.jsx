@@ -43,14 +43,18 @@ const StudentQuizAttempt = ({ quiz, courseId, onBack }) => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `${API_BASE_URL}/student/quiz_questions/${quiz.test_id}`,
         {
-          headers: getAuthHeaders(),
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-      const data = await response.json();
-      if (response.ok) {
+
+      const data = response.data;
+
+      if (response.statusText === "OK") {
         setQuestions(data);
       }
     } catch (error) {
@@ -74,17 +78,19 @@ const StudentQuizAttempt = ({ quiz, courseId, onBack }) => {
   const handleSubmit = async (isAuto = false) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(
+      const response = await axios.post(
         `${API_BASE_URL}/student/submit_quiz/${quiz.test_id}`,
+        { answers },
         {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ answers }),
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
-      const data = await response.json();
 
-      if (response.ok) {
+      const data = response.data;
+
+      if (response.statusText === "OK") {
         setSubmitted(true);
         setMessage({
           type: "success",

@@ -2,7 +2,12 @@ import React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import Button from "./Button";
 
-const NavbarDropdown = () => {
+const DropdownButton = ({
+  onAddQuestions,
+  onAddManualQuestion,
+  onDeleteQuestions,
+  onModifyDuration,
+}) => {
   return (
     <div className="relative group z-50">
       <Button>Modify Quiz</Button>
@@ -16,14 +21,14 @@ const NavbarDropdown = () => {
 
           <div className="absolute left-full top-0 w-40 bg-white text-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover/nested:opacity-100 group-hover/nested:visible transition-all duration-200 ml-1 border border-gray-100">
             <button
-              onClick={() => handleMenuAction("add-auto")}
+              onClick={onAddQuestions}
               className="w-full text-left block px-4 py-2 hover:bg-blue-50 hover:text-blue-600 text-sm"
             >
               Automatic
             </button>
 
             <button
-              onClick={() => handleMenuAction("add-manual")}
+              onClick={onAddManualQuestion}
               className="w-full text-left block px-4 py-2 hover:bg-blue-50 hover:text-blue-600 text-sm"
             >
               Manual
@@ -32,14 +37,14 @@ const NavbarDropdown = () => {
         </div>
 
         <button
-          onClick={() => handleMenuAction("delete")}
+          onClick={onDeleteQuestions}
           className="w-full text-left block px-4 py-3 hover:bg-red-50 hover:text-red-600 border-b border-gray-100 last:border-0"
         >
           Delete Questions
         </button>
 
         <button
-          onClick={() => handleMenuAction("time")}
+          onClick={onModifyDuration}
           className="w-full text-left block px-4 py-3 hover:bg-gray-50 last:border-0"
         >
           Modify Time
@@ -49,4 +54,4 @@ const NavbarDropdown = () => {
   );
 };
 
-export default NavbarDropdown;
+export default DropdownButton;

@@ -28,22 +28,24 @@ function RegisterForm({ onSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/register`,
+        {
           email_id: formData.email_id,
           name: formData.name,
           password: formData.password,
           role: formData.role,
-        }),
-      });
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok) {
+      if (response.statusText === "OK") {
         setSuccess(true);
         setTimeout(() => {
           onSuccess();

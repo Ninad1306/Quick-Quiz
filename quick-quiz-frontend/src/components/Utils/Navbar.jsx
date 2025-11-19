@@ -8,7 +8,6 @@ import {
   BarChart3,
 } from "lucide-react";
 import Button from "./Button";
-import NavbarDropdown from "./NavbarDropdown";
 
 const Navbar = ({
   user,
@@ -17,7 +16,6 @@ const Navbar = ({
   onEnrollCourse,
   onAddQuiz,
   onViewAnalytics,
-  onBack,
   currentView,
 }) => {
   return (
@@ -57,10 +55,6 @@ const Navbar = ({
               <Button onClick={onEnrollCourse} variant="success" icon={Plus}>
                 Enroll Course
               </Button>
-            )}
-
-            {currentView === "quiz" && user?.role === "teacher" && (
-              <NavbarDropdown />
             )}
 
             <div className="flex items-center gap-2 text-gray-700">
