@@ -9,7 +9,7 @@ const Course = ({ course, userRole, onBack, onAddQuiz, onViewAnalytics }) => {
   const [quizzes, setQuizzes] = useState([]);
 
   useEffect(() => {
-    fetchQuizzes(userRole);  
+    fetchQuizzes(userRole);
   }, []);
 
   const fetchQuizzes = async (role) => {
@@ -20,13 +20,15 @@ const Course = ({ course, userRole, onBack, onAddQuiz, onViewAnalytics }) => {
         Authorization: "Bearer " + localStorage.getItem("token"),
       };
 
-      const res = await axios.get(`${API_BASE_URL}/teacher/list_quiz`, {
-        headers,
-      });
+      const res = await axios.get(
+        `${API_BASE_URL}/teacher/list_quiz/${course.course_id}`,
+        {
+          headers,
+        }
+      );
       setQuizzes(res.data);
     }, 500);
   };
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
