@@ -195,7 +195,7 @@ def list_questions(user, quiz_id):
 
     test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
     if not test_obj:
-        return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+        return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
     
     questions_obj = Questions.query.filter_by(test_id=quiz_id).all()
     return jsonify([question.to_dict() for question in questions_obj]), 200
@@ -218,7 +218,7 @@ def publish_quiz(user, quiz_id):
 
         test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).with_for_update().first()
         if not test_obj:
-            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
 
         test_obj.status = 'published'
         test_obj.start_time = start_time
@@ -246,7 +246,7 @@ def modify_quiz(user, quiz_id):
 
         test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).with_for_update().first()
         if not test_obj:
-            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."})
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
 
         test_obj.duration_minutes = str(int(test_obj.duration_minutes) + int(extra_time))
 
@@ -261,3 +261,31 @@ def modify_quiz(user, quiz_id):
     
     except Exception as e:
         return jsonify({'error':f'Exception occurred: {e}'}), 400
+    
+@teacher_bp.route('/delete_questions/<quiz_id>', methods=['POST'])
+@teacher_required
+def delete_questions(user, quiz_id):
+
+    try:
+        
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
+        
+        data = request.get_json()
+        question_ids = data['question_ids']
+        print(question_ids)
+
+        quest_objs = Questions.query.filter_by(test_id=quiz_id).all()
+        test_question_ids = [obj.question_id for obj in quest_objs]
+
+        if not set(question_ids).issubset(test_question_ids):
+            return jsonify({'error': 'Some of the Question IDs not found for given test.'})
+        
+        Questions.query.filter(Questions.question_id.in_(question_ids)).delete()
+        db.session.commit()
+
+        return jsonify({'message': 'Deletion successful'}), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Exception occurred: {e}'}), 400
