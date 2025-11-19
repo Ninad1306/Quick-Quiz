@@ -157,7 +157,6 @@ def create_quiz(user):
             options = json.dumps(item['options']) if 'options' in item.keys() else ''
             tags = json.dumps(item['tags'])
             correct_answer = json.dumps(item['correct_answer'])
-
             obj = Questions(
                 test_id=test_object.test_id, 
                 question_text=item['question_text'],
@@ -250,9 +249,12 @@ def modify_quiz_duration(user, quiz_id):
         if not test_obj:
             return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
 
-        test_obj.duration_minutes = str(int(test_obj.duration_minutes) + int(extra_time))
+        test_obj.duration_minutes = int(test_obj.duration_minutes) + int(extra_time)
 
         db.session.commit()
+
+        if not test_obj.start_time:
+            return jsonify({'message':'Test duration modified successfully.'}), 200
 
         start_time = test_obj.start_time
         end_time = start_time + timedelta(minutes=int(extra_time))
@@ -306,7 +308,7 @@ def modify_quiz(user, quiz_id):
         test_obj = Tests.query.get(quiz_id)
         
         old_num_questions = int(test_obj.total_questions)
-        new_num_questions = int(quiz_update_data['total_questions'])
+        new_num_questions = int(quiz_update_data['total_questions']) + old_num_questions
         new_total_marks = quiz_update_data['total_marks'] if quiz_update_data['total_marks'] else test_obj.total_marks
 
         if old_num_questions < new_num_questions:
@@ -334,12 +336,6 @@ def modify_quiz(user, quiz_id):
                 question_objects.append(obj)
             
             db.session.add_all(question_objects)
-        
-        elif old_num_questions > new_num_questions:
-
-            question_objs = Questions.query.filter_by(test_id=quiz_id).limit(old_num_questions-new_num_questions).all()
-            for q in question_objs:
-                db.session.delete(q)
 
         recalibrate_marks(quiz_id, new_total_marks)
 

@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Clock, AlertCircle, CheckCircle, Calendar } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
+import DropdownButton from "../Utils/DropdownButton";
+import AddQuestions from "../Modal/AddQuestions";
+import DeleteQuestions from "../Modal/DeleteQuestions";
+import ModifyDuration from "../Modal/ModifyDuration";
+import AddManualQuestion from "../Modal/AddManualQuestion";
+import axios from "axios";
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -21,10 +27,12 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     start_time: "",
   });
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [showModifyModal, setShowModifyModal] = useState(false);
-  const [extraTime, setExtraTime] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [showAddQuestions, setShowAddQuestions] = useState(false);
+  const [showDeleteQuestions, setShowDeleteQuestions] = useState(false);
+  const [showModifyDuration, setShowModifyDuration] = useState(false);
+  const [showAddManual, setShowAddManual] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
@@ -32,14 +40,16 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `${API_BASE_URL}/teacher/list_questions/${quiz.test_id}`,
         {
           headers: getAuthHeaders(),
         }
       );
-      const data = await response.json();
-      if (response.ok) {
+
+      const data = response.data;
+
+      if (response.statusText === "OK") {
         setQuestions(data);
       }
     } catch (error) {
@@ -50,17 +60,17 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
   const handlePublish = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await axios.post(
         `${API_BASE_URL}/teacher/publish_quiz/${quiz.test_id}`,
+        publishForm,
         {
-          method: "POST",
           headers: getAuthHeaders(),
-          body: JSON.stringify(publishForm),
         }
       );
-      const data = await response.json();
 
-      if (response.ok) {
+      const data = response.data;
+
+      if (response.statusText === "OK") {
         setMessage({ type: "success", text: "Quiz published successfully!" });
         setShowPublishModal(false);
         onUpdate();
@@ -76,37 +86,37 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     setLoading(false);
   };
 
-  const handleModifyTime = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/teacher/modify_quiz/${quiz.test_id}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ extra_time: extraTime }),
-        }
-      );
-      const data = await response.json();
+  // const handleModifyTime = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.post(
+  //       `${API_BASE_URL}/teacher/modify_quiz/${quiz.test_id}`,
+  //       { extra_time: extraTime },
+  //       {
+  //         headers: getAuthHeaders(),
+  //       }
+  //     );
 
-      if (response.ok) {
-        setMessage({
-          type: "success",
-          text: "Quiz duration updated successfully!",
-        });
-        setShowModifyModal(false);
-        onUpdate();
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Failed to modify quiz",
-        });
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Error modifying quiz" });
-    }
-    setLoading(false);
-  };
+  //     const data = response.data;
+
+  //     if (response.statusText === "OK") {
+  //       setMessage({
+  //         type: "success",
+  //         text: "Quiz duration updated successfully!",
+  //       });
+  //       setShowModifyModal(false);
+  //       onUpdate();
+  //     } else {
+  //       setMessage({
+  //         type: "error",
+  //         text: data.error || "Failed to modify quiz",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     setMessage({ type: "error", text: "Error modifying quiz" });
+  //   }
+  //   setLoading(false);
+  // };
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -169,15 +179,15 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
                 Publish Quiz
               </button>
             )}
-            {quizData.status === "active" && (
-              <button
-                onClick={() => setShowModifyModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Clock size={18} />
-                Extend Time
-              </button>
-            )}
+
+            {
+              <DropdownButton
+                onAddQuestions={() => setShowAddQuestions(true)}
+                onAddManualQuestion={() => setShowAddManual(true)}
+                onDeleteQuestions={() => setShowDeleteQuestions(true)}
+                onModifyDuration={() => setShowModifyDuration(true)}
+              />
+            }
           </div>
         </div>
 
@@ -238,16 +248,18 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
                   </div>
                   <p className="text-gray-800 mb-3">{q.question_text}</p>
 
-                  {q.question_type!=="nat" && q.options && q.options.length > 0 && (
-                    <div className="space-y-1 ml-4">
-                      {q.options.map((opt) => (
-                        <div key={opt.id} className="flex items-center gap-2">
-                          <span className="font-medium">{opt.id}.</span>
-                          <span>{opt.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {q.question_type !== "nat" &&
+                    q.options &&
+                    q.options.length > 0 && (
+                      <div className="space-y-1 ml-4">
+                        {q.options.map((opt) => (
+                          <div key={opt.id} className="flex items-center gap-2">
+                            <span className="font-medium">{opt.id}.</span>
+                            <span>{opt.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                   <div className="mt-2 text-sm text-gray-600">
                     <span className="font-medium">Correct Answer:</span>{" "}
@@ -318,44 +330,31 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
         </div>
       )}
 
-      {/* Modify Time Modal */}
-      {showModifyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Extend Quiz Duration</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
-                Additional Time (minutes)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={extraTime}
-                onChange={(e) => setExtraTime(e.target.value)}
-                className="w-full p-2 border rounded-lg"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Current duration: {quizData.duration_minutes} minutes
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleModifyTime}
-                disabled={loading || !extraTime}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {loading ? "Updating..." : "Extend Time"}
-              </button>
-              <button
-                onClick={() => setShowModifyModal(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddQuestions
+        show={showAddQuestions}
+        onClose={() => setShowAddQuestions(false)}
+        quizId={quiz?.test_id}
+      />
+
+      <DeleteQuestions
+        show={showDeleteQuestions}
+        onClose={() => setShowDeleteQuestions(false)}
+        questions={questions}
+        quizId={quiz?.test_id}
+      />
+
+      <ModifyDuration
+        show={showModifyDuration}
+        onClose={() => setShowModifyDuration(false)}
+        quizId={quiz?.test_id}
+        currentDuration={quiz?.duration_minutes}
+      />
+
+      <AddManualQuestion
+        show={showAddManual}
+        onClose={() => setShowAddManual(false)}
+        quizId={quiz?.test_id}
+      />
     </div>
   );
 };

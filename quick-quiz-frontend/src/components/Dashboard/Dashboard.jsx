@@ -10,6 +10,7 @@ import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 import TeacherQuizManagement from "../Quiz/TeacherQuizManagement";
 
+
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -44,6 +45,7 @@ const MainPage = ({ user, onLogout }) => {
           headers,
         }
       );
+      
       setQuizzes(res.data);
     }, 500);
   };
@@ -251,6 +253,8 @@ const MainPage = ({ user, onLogout }) => {
         courseId={selectedCourse?.course_id}
         onSubmit={handleAddQuiz}
       />
+
+      
     </div>
   );
 };

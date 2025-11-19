@@ -8,11 +8,11 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
   const [quizData, setQuizData] = useState({
     title: "",
     description: "",
-    difficulty_level: "Medium",
+    difficulty_level: "Easy",
     duration_minutes: 60,
-    total_marks: 100,
-    total_questions: 10,
-    passing_marks: 40,
+    total_marks: 10,
+    total_questions: 1,
+    passing_marks: 4,
   });
 
   const handleSubmit = () => {
@@ -22,14 +22,14 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
     });
 
     setQuizData({
-      title: "",
-      description: "",
-      difficulty_level: "Medium",
-      duration_minutes: 60,
-      total_marks: 100,
-      total_questions: 10,
-      passing_marks: 40,
-    });
+    title: "Quiz 1",
+    description: "",
+    difficulty_level: "Easy",
+    duration_minutes: 60,
+    total_marks: 10,
+    total_questions: 1,
+    passing_marks: 4,
+  });
   };
 
   return (
