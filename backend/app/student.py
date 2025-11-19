@@ -190,7 +190,7 @@ def get_available_courses():
 	return jsonify(courses), 200
 
 
-@student_bp.route('/list_questions/<int:quiz_id>', methods=['GET'])
+@student_bp.route('/list_questions/<int:test_id>', methods=['GET'])
 @jwt_required()
 def list_questions_for_quiz(quiz_id: int):
 	"""Return questions for a quiz if the quiz is active and the student hasn't attempted it.
@@ -209,7 +209,7 @@ def list_questions_for_quiz(quiz_id: int):
 	if user.role != 'student':
 		return jsonify({"error": "Only students can view quiz questions"}), 403
 
-	test = Tests.query.filter_by(test_id=quiz_id).first()
+	test = Tests.query.filter_by(test_id=test_id).first()
 	if not test:
 		return jsonify({"error": "Quiz not found"}), 404
 
