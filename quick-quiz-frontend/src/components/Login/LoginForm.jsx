@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { API_BASE_URL } from "../../constants";
 import axios from "axios";
-
-const API_BASE_URL = 'http://localhost:5000';
 
 function LoginForm({ onSuccess }) {
   const [formData, setFormData] = useState({

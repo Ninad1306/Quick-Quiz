@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 import { BookOpen } from "lucide-react";
 import Navbar from "../Utils/Navbar";
@@ -8,7 +9,6 @@ import AddCourse from "../Modal/AddCourse";
 import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 
-const API_BASE_URL = "http://localhost:5000";
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);

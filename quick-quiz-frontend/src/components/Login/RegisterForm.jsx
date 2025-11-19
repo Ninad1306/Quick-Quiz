@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5000';
+import React, { useState } from "react";
+import { AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { API_BASE_URL } from "../../constants";
 
 function RegisterForm({ onSuccess }) {
   const [formData, setFormData] = useState({
