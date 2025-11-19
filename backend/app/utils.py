@@ -96,3 +96,18 @@ def recalibrate_marks(quiz_id, total_marks):
             obj.marks = new_marks
         
         db.session.commit()
+
+def validate_options_list(options):
+
+    if not isinstance(options, list):
+        raise ValueError("Options must be a list.")
+    
+    for idx, item in enumerate(options):
+        if not isinstance(item, dict):
+            raise ValueError(f"options[{idx}] must be an object")
+        if set(item.keys()) != {"id", "text"}:
+            raise ValueError(f"options[{idx}] must have exactly 'id' and 'text'")
+        if not all(isinstance(item[k], str) for k in item):
+            raise ValueError(f"options[{idx}] values must be strings")
+    
+    return options

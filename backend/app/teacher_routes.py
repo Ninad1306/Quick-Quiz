@@ -352,3 +352,45 @@ def modify_quiz(user, quiz_id):
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({'error': f'Exception occurred: {e}'}), 400
+
+@teacher_bp.route('/add_quiz_questions/<quiz_id>', methods=['POST'])
+@teacher_required
+def add_quiz_questions(user, quiz_id):
+
+    try:
+        
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
+        
+        data = request.get_json()
+        if not isinstance(data, list):
+            return jsonify({'error': "Payload should be list of question objects"}), 400
+        
+        questions = []
+        new_total_marks = int(test_obj.total_marks)
+
+        for item in data:
+            obj = Questions(
+                test_id=quiz_id,
+                question_text=item.get('question_text', ''),
+                question_type=item.get('question_type', None),
+                options=item.get('options', None),
+                correct_answer=item.get('correct_answer', None),
+                tags=item.get('tags', None),
+                marks=item.get('marks', None),
+                difficulty_level=item.get('difficulty_level', None)
+            )
+            new_total_marks += item.get('marks', 0)
+            questions.append(obj)
+        
+        recalibrate_marks(quiz_id, new_total_marks)
+
+        db.session.add_all(questions)
+        db.session.commit()
+
+        return jsonify({'message': 'Questions added successfully.'}), 201
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({'error': f"Exception occurred: {e}"}), 400

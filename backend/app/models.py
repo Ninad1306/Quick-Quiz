@@ -199,6 +199,7 @@ class Questions(db.Model):
     __tablename__ = 'questions'
 
     question_id = mapped_column(Integer, primary_key=True)
+    question_type = mapped_column(String(32), nullable=False)
     test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
     question_text = mapped_column(String(1024), nullable=False)
     options = mapped_column(String(1024), nullable=True)
@@ -206,12 +207,92 @@ class Questions(db.Model):
     tags = mapped_column(String(512), nullable=False)
     marks = mapped_column(Float, nullable=False)
     difficulty_level = mapped_column(String(32), nullable=False)
-    question_type = mapped_column(String(32), nullable=False)
 
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
     __table_args__ = (
         db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
     )
+
+    @validates('question_text')
+    def validates_question_text(self, key, question_text):
+        if not isinstance(question_text, str):
+            raise ValueError("question_type should be string")
+        if len(question_text) == 0:
+            raise ValueError("question_text cannot be empty")
+        return question_text
+    
+    @validates('question_type')
+    def validates_question_type(self, key, question_type):
+        if question_type.lower() not in {'mcq', 'msq', 'nat'}:
+            raise ValueError("question_type should be one of mcq, msq or nat.")
+        return question_type
+
+    @validates('options')
+    def validate_options(self, key, options):
+        
+        if isinstance(options, str):
+            try:
+                options = json.loads(options)
+            except Exception as e:
+                raise ValueError("Failed to convert options to JSON")
+        
+        qtype = self.question_type.lower()
+        from app.utils import validate_options_list
+
+        if qtype == 'mcq' or qtype == 'msq':
+            if not validate_options_list(options): #(isinstance(options, list) and all(isinstance(opt, str) for opt in options)):
+                options = validate_options_list
+        
+        return json.dumps(options)
+
+
+    @validates('correct_answer')
+    def validate_correct_answer(self, key, correct_answer):
+        
+        if isinstance(correct_answer, str):
+            try:
+                correct_answer = json.loads(correct_answer)
+            except Exception as e:
+                raise ValueError(f"Failed to convert correct_answer to JSON: {e}")
+
+        qtype = self.question_type.lower()
+
+        if qtype == 'mcq':
+            if not isinstance(correct_answer, str):
+                raise ValueError("MCQ correct_answer must be a single string")
+        
+        elif qtype == 'msq':
+            if not (isinstance(correct_answer, list) and all(isinstance(ans, str) for ans in correct_answer)):
+                raise ValueError("MSQ correct_answer must be a list of strings")
+        
+        elif qtype == 'nat':
+            if not isinstance(correct_answer, int):
+                raise ValueError("NAT correct_answer must be an integer")
+        
+        else:
+            raise ValueError("Invalid question_type")
+        
+        return json.dumps(correct_answer)
+
+    @validates('tags')
+    def validate_tags(self, key, tags):
+        
+        if isinstance(tags, str):
+            try:
+                tags = json.loads(tags)
+            except Exception as e:
+                raise ValueError(f"Failed to convert tags to JSON: {e}")
+
+        if not (isinstance(tags, list) and all(isinstance(tag, str) for tag in tags)):
+            raise ValueError("tags should be a list of strings.")
+        return json.dumps(tags)
+
+    @validates('difficulty_level')
+    def validate_difficulty_level(self, key, difficulty_level):
+        if difficulty_level.lower() not in {'easy', 'medium', 'hard'}:
+            raise ValueError("difficulty_level should be one of easy, medium or hard.")
+        return difficulty_level
+
 
     def to_dict(self):
         return {
