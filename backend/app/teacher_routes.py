@@ -324,12 +324,12 @@ def modify_quiz(user, quiz_id):
                 obj = Questions(
                     test_id=quiz_id, 
                     question_text=item['question_text'],
+                    question_type=item['question_type'],
                     options=options,
                     correct_answer=correct_answer,
                     tags=tags,
                     marks=item['marks'],
-                    difficulty_level=item['difficulty_level'],
-                    question_type=item['question_type']
+                    difficulty_level=item['difficulty_level']
                 )
                 question_objects.append(obj)
             

@@ -13,4 +13,4 @@ Flask SQLAlchemy references:
 Flask Blueprint for better route Organization:
 - https://flask.palletsprojects.com/en/stable/blueprints/#my-first-blueprint
 
-
+https://stackoverflow.com/questions/32555829/flask-validates-decorator-multiple-fields-simultaneously
