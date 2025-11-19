@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 import { BookOpen } from "lucide-react";
 import Navbar from "../Utils/Navbar";
@@ -8,7 +9,6 @@ import AddCourse from "../Modal/AddCourse";
 import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 
-const API_BASE_URL = "http://localhost:5000";
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -17,10 +17,33 @@ const MainPage = ({ user, onLogout }) => {
   const [showAddQuizModal, setShowAddQuizModal] = useState(false);
   const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quizzes, setQuizzes] = useState([]);
 
   useEffect(() => {
     fetchCourses(user.role);
   }, []);
+
+  useEffect(() => {
+    fetchQuizzes(user.role);
+  }, [showAddQuizModal, selectedCourse]);
+
+  const fetchQuizzes = async (role) => {
+    setTimeout(async () => {
+      if (role !== "teacher") return;
+
+      const headers = {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      };
+
+      const res = await axios.get(
+        `${API_BASE_URL}/teacher/list_quiz/${selectedCourse?.course_id}`,
+        {
+          headers,
+        }
+      );
+      setQuizzes(res.data);
+    }, 500);
+  };
 
   const fetchCourses = async (role) => {
     setLoading(true);
@@ -91,15 +114,11 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const handleAddQuiz = async (quizData) => {
-    await axios.post(
-      `${API_BASE_URL}/teacher/create_quiz`,
-      quizData,
-      {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      }
-    );
+    await axios.post(`${API_BASE_URL}/teacher/create_quiz`, quizData, {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    });
     setShowAddQuizModal(false);
   };
 
@@ -137,6 +156,7 @@ const MainPage = ({ user, onLogout }) => {
       {selectedCourse ? (
         <Course
           course={selectedCourse}
+          quizzes={quizzes}
           userRole={user.role}
           onBack={handleBackToCourses}
           onAddQuiz={() => setShowAddQuizModal(true)}

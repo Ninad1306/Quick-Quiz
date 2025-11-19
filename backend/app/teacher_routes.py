@@ -182,11 +182,11 @@ def create_quiz(user):
         db.session.rollback()
         return jsonify({"error": f"Could not create quiz. Exception: {str(e)}"}), 500
 
-@teacher_bp.route('/list_quiz', methods=['GET'])
+@teacher_bp.route('/list_quiz/<course_id>', methods=['GET'])
 @teacher_required
-def list_quiz(user):
+def list_quiz(user, course_id):
 
-    tests_obj = Tests.query.filter_by(created_by=user.id).order_by(Tests.created_at.desc()).all()
+    tests_obj = Tests.query.filter_by(created_by=user.id, course_id=course_id).order_by(Tests.created_at.desc()).all()
     return jsonify([test.to_dict() for test in tests_obj]), 200
 
 @teacher_bp.route('/list_questions/<quiz_id>', methods=['GET'])

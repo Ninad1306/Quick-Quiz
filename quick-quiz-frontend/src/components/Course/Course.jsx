@@ -1,32 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BookOpen, FileText } from "lucide-react";
+import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 import Button from "../Utils/Button";
 
-const API_BASE_URL = "http://localhost:5000";
-
-const Course = ({ course, userRole, onBack, onAddQuiz, onViewAnalytics }) => {
-  const [quizzes, setQuizzes] = useState([]);
-
-  useEffect(() => {
-    fetchQuizzes(userRole);  
-  }, []);
-
-  const fetchQuizzes = async (role) => {
-    setTimeout(async () => {
-      if (role !== "teacher") return;
-
-      const headers = {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-      };
-
-      const res = await axios.get(`${API_BASE_URL}/teacher/list_quiz`, {
-        headers,
-      });
-      setQuizzes(res.data);
-    }, 500);
-  };
-
+const Course = ({ course, quizzes, userRole, onBack, onAddQuiz, onViewAnalytics }) => {
+  
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
