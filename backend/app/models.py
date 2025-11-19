@@ -311,15 +311,38 @@ class Questions(db.Model):
 class Student_Test_Question_Attempt(db.Model):
     __tablename__ = 'student_test_question_attempt'
 
-    question_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
-    student_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
-    test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
-    selected_options = mapped_column(String(32), nullable=False)  # e.g., 'A', 'B', 'C', 'D' or ['A','B'] for multiple selected options
-    marks_obtained = mapped_column(Integer, nullable=False)
+    # Merged with Student_Test_Attempt: each question attempt references a per-test attempt via `attempt_id`.
+    attempt_id = mapped_column(Integer, ForeignKey('student_test_attempt.attempt_id'), nullable=False)
+    question_id = mapped_column(Integer, ForeignKey('questions.question_id'), nullable=False)
+    selected_options = mapped_column(String(1024), nullable=False)  # stored as JSON string
+    marks_obtained = mapped_column(Float, nullable=True)
 
     attempted_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
     __table_args__ = (
-        db.PrimaryKeyConstraint('question_id', 'student_id', 'test_id'),
+        db.PrimaryKeyConstraint('attempt_id', 'question_id'),
     )
+
+
+class Student_Test_Attempt(db.Model):
+    __tablename__ = 'student_test_attempt'
+
+    attempt_id = mapped_column(Integer, primary_key=True)
+    student_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
+    test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
+    started_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
+    completed_at = mapped_column(DateTime, nullable=True)
+    score = mapped_column(Float, nullable=True)
+    status = mapped_column(String(32), nullable=False)  # e.g., 'in_progress', 'completed', 'submitted'
+
+    def to_dict(self):
+        return {
+            "attempt_id": self.attempt_id,
+            "student_id": self.student_id,
+            "test_id": self.test_id,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "score": self.score,
+            "status": self.status
+        }
     
     
