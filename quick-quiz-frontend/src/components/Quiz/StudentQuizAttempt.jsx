@@ -1,22 +1,60 @@
 import React, { useState, useEffect } from "react";
-import { Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import axios from "axios";
+import Button from "../Utils/Button"; // Assuming you have this component
 
 const StudentQuizAttempt = ({ quiz, onBack }) => {
+  const [attemptId, setAttemptId] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({}); // Map: { questionId: answer }
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+  const [scoreData, setScoreData] = useState(null); // To store result after submit
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // 1. Initialize Quiz: Start Attempt & Fetch Questions
   useEffect(() => {
-    fetchQuestions();
-    calculateTimeRemaining();
-  }, []);
+    const initializeQuiz = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
 
+        // Step A: Start Attempt to get ID
+        const startRes = await axios.post(
+          `${API_BASE_URL}/student/start_attempt/${quiz.test_id}`,
+          {},
+          { headers }
+        );
+        
+        const newAttemptId = startRes.data.attempt_id;
+        setAttemptId(newAttemptId);
+
+        // Step B: Fetch Questions
+        const qRes = await axios.get(
+          `${API_BASE_URL}/student/list_questions/${quiz.test_id}`,
+          { headers }
+        );
+        setQuestions(qRes.data.questions);
+        
+        // Step C: Setup Timer
+        calculateTimeRemaining();
+        setLoading(false);
+
+      } catch (err) {
+        console.error("Initialization error:", err);
+        setError(err.response?.data?.error || "Failed to load quiz. It might not be active.");
+        setLoading(false);
+      }
+    };
+
+    initializeQuiz();
+  }, [quiz.test_id]);
+
+  // 2. Timer Logic
   useEffect(() => {
     if (timeRemaining !== null && timeRemaining > 0 && !submitted) {
       const timer = setInterval(() => {
@@ -33,36 +71,23 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   }, [timeRemaining, submitted]);
 
   const calculateTimeRemaining = () => {
+    // Assuming quiz window is fixed (start_time to start_time + duration)
     const startTime = new Date(quiz.start_time);
-    const endTime = new Date(
-      startTime.getTime() + quiz.duration_minutes * 60000
-    );
+    const endTime = new Date(startTime.getTime() + quiz.duration_minutes * 60000);
     const now = new Date();
     const remaining = Math.floor((endTime - now) / 1000);
     setTimeRemaining(Math.max(0, remaining));
   };
 
-  const fetchQuestions = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/student/list_questions/${quiz.test_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      const data = response.data;
-
-      if (response.status === 200) {
-        setQuestions(data["questions"]);
-      }
-    } catch (error) {
-      console.error("Error fetching questions:", error);
-    }
+  const formatTime = (seconds) => {
+    if (seconds === null) return "--:--";
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs > 0 ? hrs + ':' : ''}${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // 3. Handle Inputs
   const handleAnswerChange = (questionId, answer) => {
     setAnswers((prev) => ({
       ...prev,
@@ -77,179 +102,179 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   };
 
   const handleSubmit = async (isAuto = false) => {
+    if (!attemptId) return;
+    
     setIsSubmitting(true);
     try {
+      // Transform answers map to list format expected by backend
+      // Backend expects: { answers: [{ question_id: 1, selected_options: "A" }, ...] }
+      const formattedAnswers = Object.keys(answers).map(qId => ({
+        question_id: parseInt(qId),
+        selected_options: answers[qId]
+      }));
+
+      const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE_URL}/student/submit_quiz/${quiz.test_id}`,
-        { answers },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${API_BASE_URL}/student/submit_attempt/${attemptId}`,
+        { answers: formattedAnswers },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const data = response.data;
+      setSubmitted(true);
+      console.log(response.data);
+      
+      setScoreData(response.data); // Backend returns { score, per_question, attempt_id }
 
-      if (response.statusText === "OK") {
-        setSubmitted(true);
-        setMessage({
-          type: "success",
-          text: isAuto
-            ? "Quiz auto-submitted (time expired)"
-            : "Quiz submitted successfully!",
-        });
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Failed to submit quiz",
-        });
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Error submitting quiz" });
+    } catch (err) {
+      console.error("Submit error:", err);
+      alert("Failed to submit quiz. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
-  const formatTime = (seconds) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hrs.toString().padStart(2, "0")}:${mins
-      .toString()
-      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  // --- RENDER STATES ---
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading Quiz...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-red-600 mb-4 text-lg">{error}</div>
+        <Button onClick={onBack} variant="secondary">Back to Course</Button>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-3xl mx-auto p-6 mt-8">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <CheckCircle size={64} className="mx-auto text-green-600 mb-4" />
-          <h2 className="text-2xl font-bold mb-2">
-            Quiz Submitted Successfully!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Your answers have been recorded. Results will be available once the
-            quiz is completed.
+          <h2 className="text-3xl font-bold mb-2 text-gray-800">Quiz Submitted!</h2>
+          
+          {scoreData && (
+            <div className="my-6 p-6 bg-blue-50 rounded-xl border border-blue-100">
+              <p className="text-gray-600 mb-2 uppercase tracking-wide text-sm font-semibold">Your Score</p>
+              <p className="text-5xl font-bold text-blue-600">
+                {scoreData.total_score} <span className="text-2xl text-gray-400">/ {quiz.total_marks}</span>
+              </p>
+            </div>
+          )}
+
+          <p className="text-gray-600 mb-8">
+            Your answers have been recorded successfully.
           </p>
-          <button
-            onClick={onBack}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            ← Back
-          </button>
+          <Button onClick={onBack} variant="primary" className="mx-auto">
+            Back to Course
+          </Button>
         </div>
       </div>
     );
   }
 
-  const currentQ = questions[currentQuestion];
+  // --- ACTIVE QUIZ RENDER ---
+
+  const currentQ = questions[currentQuestionIndex];
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
+    <div className="max-w-5xl mx-auto p-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">{quiz.title}</h2>
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-              timeRemaining < 300
-                ? "bg-red-100 text-red-800"
-                : "bg-blue-100 text-blue-800"
-            }`}
-          >
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">{quiz.title}</h2>
+            <p className="text-gray-500 text-sm">Question {currentQuestionIndex + 1} of {questions.length}</p>
+          </div>
+          
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg border ${
+              timeRemaining < 300 ? "bg-red-50 text-red-600 border-red-100" : "bg-blue-50 text-blue-600 border-blue-100"
+            }`}>
             <Clock size={20} />
-            <span className="font-mono font-bold">
-              {formatTime(timeRemaining)}
-            </span>
+            <span>{formatTime(timeRemaining)}</span>
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4">
-          <span className="text-sm px-3 py-1 bg-gray-100 rounded">
-            Question {currentQuestion + 1} of {questions.length}
-          </span>
-          <span className="text-sm px-3 py-1 bg-gray-100 rounded">
-            Answered: {Object.keys(answers).length} / {questions.length}
-          </span>
-        </div>
-
-        <div className="h-2 bg-gray-200 rounded-full mb-6">
+        {/* Progress Bar */}
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue-600 rounded-full transition-all"
-            style={{
-              width: `${((currentQuestion + 1) / questions.length) * 100}%`,
-            }}
+            className="h-full bg-blue-600 transition-all duration-300 ease-out"
+            style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
           />
         </div>
       </div>
 
-      {message.text && (
-        <div
-          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800"
-              : "bg-red-50 text-red-800"
-          }`}
-        >
-          {message.type === "success" ? (
-            <CheckCircle size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
-          {message.text}
-        </div>
-      )}
-
+      {/* Question Card */}
       {currentQ && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm px-2 py-1 bg-blue-100 rounded">
-              {currentQ.difficulty_level}
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-8 border border-gray-100 min-h-[400px] flex flex-col">
+          <div className="flex items-start gap-3 mb-6">
+            <span className="bg-gray-100 text-gray-600 font-bold px-3 py-1 rounded text-sm">
+              {currentQ.difficulty_level?.toUpperCase()}
             </span>
-            <span className="text-sm px-2 py-1 bg-green-100 rounded">
-              {currentQ.marks} marks
+            <span className="bg-gray-100 text-gray-600 font-bold px-3 py-1 rounded text-sm">
+              {currentQ.marks} Marks
+            </span>
+            <span className="ml-auto bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded text-sm uppercase">
+              {currentQ.question_type}
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold mb-4">
+          <h3 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
+            <span className="font-bold text-gray-400 mr-2">{currentQuestionIndex + 1}.</span>
             {currentQ.question_text}
           </h3>
 
-          <div className="space-y-3">
-            {currentQ.question_type === "mcq" &&
-              currentQ.options?.map((opt) => (
-                <label
-                  key={opt.id}
-                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name={`question-${currentQ.question_id}`}
-                    value={opt.id}
-                    checked={answers[currentQ.question_id] === opt.id}
-                    onChange={(e) =>
-                      handleAnswerChange(currentQ.question_id, e.target.value)
-                    }
-                    className="w-4 h-4"
-                  />
-                  <span>
-                    <strong>{opt.id}.</strong> {opt.text}
-                  </span>
-                </label>
-              ))}
+          <div className="space-y-3 flex-grow">
+            {/* MCQ Options */}
+            {currentQ.question_type === "mcq" && currentQ.options?.map((opt) => (
+              <label
+                key={opt.id}
+                className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
+                  answers[currentQ.question_id] === opt.id 
+                    ? "border-blue-500 bg-blue-50 text-blue-800" 
+                    : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                   answers[currentQ.question_id] === opt.id ? "border-blue-500" : "border-gray-300"
+                }`}>
+                  {answers[currentQ.question_id] === opt.id && <div className="w-3 h-3 rounded-full bg-blue-500" />}
+                </div>
+                <input
+                  type="radio"
+                  name={`question-${currentQ.question_id}`}
+                  value={opt.id}
+                  checked={answers[currentQ.question_id] === opt.id}
+                  onChange={(e) => handleAnswerChange(currentQ.question_id, e.target.value)}
+                  className="hidden"
+                />
+                <span className="font-medium">{opt.text}</span>
+              </label>
+            ))}
 
-            {currentQ.question_type === "msq" &&
-              currentQ.options?.map((opt) => (
+            {/* MSQ Options */}
+            {currentQ.question_type === "msq" && currentQ.options?.map((opt) => {
+              const isSelected = (answers[currentQ.question_id] || []).includes(opt.id);
+              return (
                 <label
                   key={opt.id}
-                  className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 text-blue-800" 
+                      : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                  }`}
                 >
+                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                     isSelected ? "border-blue-500 bg-blue-500" : "border-gray-300"
+                  }`}>
+                    {isSelected && <CheckCircle size={16} className="text-white" />}
+                  </div>
                   <input
                     type="checkbox"
                     value={opt.id}
-                    checked={(answers[currentQ.question_id] || []).includes(
-                      opt.id
-                    )}
+                    checked={isSelected}
                     onChange={(e) => {
                       const current = answers[currentQ.question_id] || [];
                       const newAnswer = e.target.checked
@@ -257,56 +282,56 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
                         : current.filter((a) => a !== opt.id);
                       handleAnswerChange(currentQ.question_id, newAnswer);
                     }}
-                    className="w-4 h-4"
+                    className="hidden"
                   />
-                  <span>
-                    <strong>{opt.id}.</strong> {opt.text}
-                  </span>
+                  <span className="font-medium">{opt.text}</span>
                 </label>
-              ))}
+              );
+            })}
 
+            {/* NAT Input */}
             {currentQ.question_type === "nat" && (
-              <input
-                type="number"
-                value={answers[currentQ.question_id] || ""}
-                onChange={(e) =>
-                  handleAnswerChange(
-                    currentQ.question_id,
-                    parseInt(e.target.value)
-                  )
-                }
-                placeholder="Enter your answer"
-                className="w-full p-3 border rounded-lg"
-              />
+              <div className="mt-4">
+                <input
+                  type="number"
+                  value={answers[currentQ.question_id] || ""}
+                  onChange={(e) => handleAnswerChange(currentQ.question_id, parseFloat(e.target.value))}
+                  placeholder="Enter your numerical answer"
+                  className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                />
+              </div>
             )}
           </div>
         </div>
       )}
 
-      <div className="flex justify-between">
-        <button
-          onClick={() => setCurrentQuestion((prev) => Math.max(0, prev - 1))}
-          disabled={currentQuestion === 0}
-          className="px-6 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
+      {/* Footer Navigation */}
+      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+        <Button
+          variant="secondary"
+          onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+          disabled={currentQuestionIndex === 0}
+          icon={ArrowLeft}
         >
           Previous
-        </button>
+        </Button>
 
-        {currentQuestion < questions.length - 1 ? (
-          <button
-            onClick={() => setCurrentQuestion((prev) => prev + 1)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        {currentQuestionIndex < questions.length - 1 ? (
+          <Button
+            variant="primary"
+            onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
           >
-            Next
-          </button>
+            Next Question
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="success"
             onClick={() => handleSubmit(false)}
             disabled={isSubmitting}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="px-8"
           >
             {isSubmitting ? "Submitting..." : "Submit Quiz"}
-          </button>
+          </Button>
         )}
       </div>
     </div>

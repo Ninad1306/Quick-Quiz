@@ -38,6 +38,8 @@ const MainPage = ({ user, onLogout }) => {
         Authorization: "Bearer " + localStorage.getItem("token"),
       };
 
+      if (!selectedCourse) return;
+
       if (role === "teacher") {
         res = await axios.get(
           `${API_BASE_URL}/teacher/list_quiz/${selectedCourse?.course_id}`,

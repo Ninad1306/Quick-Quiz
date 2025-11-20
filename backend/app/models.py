@@ -1,5 +1,5 @@
 from sqlalchemy.orm import mapped_column, relationship, validates
-from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float, Boolean
 from sqlalchemy import sql, event
 from flask_sqlalchemy import SQLAlchemy
 from app.constants import *
@@ -69,7 +69,6 @@ class Teacher_Courses_Map(db.Model):
         back_populates='teacher_courses_maps',
     )
 
-
     @validates('offered_at')
     def validate_offered_at(self, key, offered_at):
         existing_mapping = Teacher_Courses_Map.query.filter_by(course_id=self.course_id, offered_at=offered_at).first()
@@ -129,6 +128,13 @@ class Tests(db.Model):
 
     questions = relationship(
         'Questions', 
+        back_populates='test',
+        cascade='all, delete-orphan',
+        passive_deletes=True
+    )
+
+    attempts = relationship(
+        'StudentTestAttempt',
         back_populates='test',
         cascade='all, delete-orphan',
         passive_deletes=True
@@ -214,8 +220,8 @@ class Questions(db.Model):
     tags = mapped_column(String(512), nullable=False)
     marks = mapped_column(Float, nullable=False)
     difficulty_level = mapped_column(String(32), nullable=False)
-
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
+    
     __table_args__ = (
         db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
     )
@@ -223,6 +229,13 @@ class Questions(db.Model):
     test = relationship(
         'Tests', 
         back_populates='questions'
+    )
+
+    question_attempts = relationship(
+        'StudentQuestionAttempt',
+        back_populates='question',
+        cascade='all, delete-orphan',
+        passive_deletes=True
     )
 
     @validates('question_text')
@@ -241,7 +254,6 @@ class Questions(db.Model):
 
     @validates('options')
     def validate_options(self, key, options):
-        
         if isinstance(options, str):
             try:
                 options = json.loads(options)
@@ -253,10 +265,8 @@ class Questions(db.Model):
 
         return json.dumps(options)
 
-
     @validates('correct_answer')
     def validate_correct_answer(self, key, correct_answer):
-        
         if isinstance(correct_answer, str):
             try:
                 if len(correct_answer) > 1:
@@ -267,7 +277,6 @@ class Questions(db.Model):
 
     @validates('tags')
     def validate_tags(self, key, tags):
-        
         if isinstance(tags, str):
             try:
                 tags = json.loads(tags)
@@ -284,20 +293,23 @@ class Questions(db.Model):
             raise ValueError("difficulty_level should be one of easy, medium or hard.")
         return difficulty_level
 
-
-    def to_dict(self):
-        return {
+    def to_dict(self, include_answer=False):
+        result = {
             "question_id": self.question_id,
             "test_id": self.test_id,
             "question_text": self.question_text,
-            "options": json.loads(self.options),
+            "options": json.loads(self.options) if self.options else None,
             "difficulty_level": self.difficulty_level,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "correct_answer": json.loads(self.correct_answer),
             "tags": json.loads(self.tags),
             "marks": self.marks,
             "question_type": self.question_type
         }
+        
+        if include_answer:
+            result["correct_answer"] = json.loads(self.correct_answer)
+        
+        return result
 
 @event.listens_for(Questions, "before_insert")
 @event.listens_for(Questions, "before_update")
@@ -317,7 +329,6 @@ def validate_question(mapper, connection, target):
     else:
         raise ValueError(f"Invalid correct_answer data type.")
 
-
     if qtype in ('mcq', 'msq') and not (isinstance(options, list) and options):
         raise ValueError(f"{qtype.upper()} question requires a non-empty list of options")
 
@@ -331,41 +342,189 @@ def validate_question(mapper, connection, target):
         raise ValueError("NAT correct_answer must be an integer")
 
 
-class Student_Test_Question_Attempt(db.Model):
-    __tablename__ = 'student_test_question_attempt'
+# IMPROVED SCHEMA FOR STUDENT ATTEMPTS
 
-    # Merged with Student_Test_Attempt: each question attempt references a per-test attempt via `attempt_id`.
-    attempt_id = mapped_column(Integer, ForeignKey('student_test_attempt.attempt_id'), nullable=False)
-    question_id = mapped_column(Integer, ForeignKey('questions.question_id'), nullable=False)
-    selected_options = mapped_column(String(1024), nullable=False)  # stored as JSON string
-    marks_obtained = mapped_column(Float, nullable=True)
-
-    attempted_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
-    __table_args__ = (
-        db.PrimaryKeyConstraint('attempt_id', 'question_id'),
-    )
-
-
-class Student_Test_Attempt(db.Model):
+class StudentTestAttempt(db.Model):
+    """
+    Main attempt record - one per test attempt by a student.
+    Tracks overall attempt metadata and scoring.
+    """
     __tablename__ = 'student_test_attempt'
 
     attempt_id = mapped_column(Integer, primary_key=True)
-    student_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
-    test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
+    student_id = mapped_column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    test_id = mapped_column(Integer, ForeignKey('tests.test_id', ondelete='CASCADE'), nullable=False)
+    
+    # Timestamps
     started_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
-    completed_at = mapped_column(DateTime, nullable=True)
-    score = mapped_column(Float, nullable=True)
-    status = mapped_column(String(32), nullable=False)  # e.g., 'in_progress', 'completed', 'submitted'
+    submitted_at = mapped_column(DateTime, nullable=True)
+    
+    # Scoring
+    total_score = mapped_column(Float, default=0.0, nullable=False)
+    percentage = mapped_column(Float, nullable=True)
+    passed = mapped_column(Boolean, nullable=True)
+    
+    # Status tracking
+    status = mapped_column(String(32), nullable=False, default='in_progress')  # in_progress, submitted, auto_submitted
+    
+    # Duration tracking (actual time taken in seconds)
+    time_taken_seconds = mapped_column(Integer, nullable=True)
+    
+    # IP and session tracking for security/analytics
+    ip_address = mapped_column(String(45), nullable=True)
+    user_agent = mapped_column(String(256), nullable=True)
+    
+    # Relationships
+    test = relationship('Tests', back_populates='attempts')
+    question_attempts = relationship(
+        'StudentQuestionAttempt',
+        back_populates='test_attempt',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+        order_by='StudentQuestionAttempt.answered_at'
+    )
 
-    def to_dict(self):
-        return {
+    @validates('status')
+    def validate_status(self, key, status):
+        allowed_statuses = ['in_progress', 'submitted', 'auto_submitted']
+        if status not in allowed_statuses:
+            raise ValueError(f"Status must be one of {allowed_statuses}")
+        return status
+
+    def calculate_score(self):
+        """Calculate total score from all question attempts"""
+        self.total_score = sum(qa.marks_obtained or 0 for qa in self.question_attempts)
+        
+        # Calculate percentage
+        if self.test and self.test.total_marks:
+            self.percentage = round((self.total_score / self.test.total_marks) * 100, 2)
+            
+            # Determine pass/fail
+            if self.test.passing_marks:
+                self.passed = self.total_score >= self.test.passing_marks
+        
+        return self.total_score
+
+    def to_dict(self, include_questions=False):
+        result = {
             "attempt_id": self.attempt_id,
             "student_id": self.student_id,
             "test_id": self.test_id,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "score": self.score,
-            "status": self.status
+            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
+            "total_score": self.total_score,
+            "percentage": self.percentage,
+            "passed": self.passed,
+            "status": self.status,
+            "time_taken_seconds": self.time_taken_seconds,
         }
+        
+        if include_questions:
+            result["questions"] = [qa.to_dict() for qa in self.question_attempts]
+        
+        return result
+
+
+class StudentQuestionAttempt(db.Model):
+    """
+    Individual question attempt within a test attempt.
+    Tracks answer given, correctness, and timing.
+    """
+    __tablename__ = 'student_question_attempt'
+
+    id = mapped_column(Integer, primary_key=True)
+    attempt_id = mapped_column(Integer, ForeignKey('student_test_attempt.attempt_id', ondelete='CASCADE'), nullable=False)
+    question_id = mapped_column(Integer, ForeignKey('questions.question_id', ondelete='CASCADE'), nullable=False)
     
+    # Answer tracking
+    selected_answer = mapped_column(Text, nullable=True)  # JSON string: can be single value, list, or numeric
+    is_correct = mapped_column(Boolean, nullable=True)
+    marks_obtained = mapped_column(Float, default=0.0, nullable=False)
     
+    # Timing
+    answered_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
+    time_spent_seconds = mapped_column(Integer, nullable=True)  # Time spent on this specific question
+    
+    # Answer change tracking (for analytics)
+    answer_changed = mapped_column(Boolean, default=False, nullable=False)
+    answer_change_count = mapped_column(Integer, default=0, nullable=False)
+    
+    # Relationships
+    test_attempt = relationship('StudentTestAttempt', back_populates='question_attempts')
+    question = relationship('Questions', back_populates='question_attempts')
+
+    __table_args__ = (
+        db.UniqueConstraint('attempt_id', 'question_id', name='uix_attempt_question'),
+    )
+
+    def check_answer(self):
+        """
+        Evaluate if the answer is correct and calculate marks.
+        Returns: (is_correct, marks_obtained)
+        """
+        if not self.question:
+            return False, 0.0
+
+        try:
+            # Parse correct answer
+            correct_answer = json.loads(self.question.correct_answer)
+            
+            # Parse selected answer
+            if self.selected_answer:
+                selected = json.loads(self.selected_answer)
+            else:
+                selected = None
+
+            question_type = self.question.question_type.lower()
+            is_correct = False
+
+            if question_type == 'mcq':
+                # Single correct answer
+                is_correct = selected == correct_answer
+            
+            elif question_type == 'msq':
+                # Multiple correct answers - must match exactly
+                if isinstance(selected, list) and isinstance(correct_answer, list):
+                    is_correct = sorted(selected) == sorted(correct_answer)
+            
+            elif question_type == 'nat':
+                # Numeric answer with tolerance
+                if selected is not None:
+                    try:
+                        is_correct = abs(float(selected) - float(correct_answer)) < 0.01
+                    except (ValueError, TypeError):
+                        is_correct = False
+
+            # Calculate marks
+            marks = float(self.question.marks) if is_correct else 0.0
+
+            self.is_correct = is_correct
+            self.marks_obtained = marks
+
+            return is_correct, marks
+
+        except Exception as e:
+            print(f"Error checking answer: {e}")
+            self.is_correct = False
+            self.marks_obtained = 0.0
+            return False, 0.0
+
+    def to_dict(self, include_correct_answer=False):
+        result = {
+            "id": self.id,
+            "attempt_id": self.attempt_id,
+            "question_id": self.question_id,
+            "selected_answer": json.loads(self.selected_answer) if self.selected_answer else None,
+            "is_correct": self.is_correct,
+            "marks_obtained": self.marks_obtained,
+            "answered_at": self.answered_at.isoformat() if self.answered_at else None,
+            "time_spent_seconds": self.time_spent_seconds,
+            "answer_changed": self.answer_changed,
+            "answer_change_count": self.answer_change_count
+        }
+        
+        if include_correct_answer and self.question:
+            result["correct_answer"] = json.loads(self.question.correct_answer)
+            result["question_text"] = self.question.question_text
+        
+        return result
