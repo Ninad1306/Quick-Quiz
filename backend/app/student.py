@@ -81,9 +81,9 @@ def get_enrolled_courses():
 	return jsonify(courses), 200
 
 
-@student_bp.route('/list_quizzes', methods=['GET'])
+@student_bp.route('/list_quizzes/<course_id>', methods=['GET'])
 @jwt_required()
-def list_quizzes_for_student():
+def list_quizzes_for_student(course_id: int):
 	"""List quizzes for the authenticated student with state.
 
 	States: 'not_published', 'published', 'active', 'completed'
@@ -102,13 +102,8 @@ def list_quizzes_for_student():
 	if user.role != 'student':
 		return jsonify({"error": "Only students can view quizzes"}), 403
 
-	enrolled_maps = Student_Courses_Map.query.filter_by(student_id=user.id).all()
-	enrolled_ids = [em.course_id for em in enrolled_maps]
 
-	if not enrolled_ids:
-		return jsonify([]), 200
-
-	tests = Tests.query.filter(Tests.course_id.in_(enrolled_ids)).all()
+	tests = Tests.query.filter_by(course_id=course_id).all()
 
 	now = datetime.utcnow()
 	result = []
@@ -143,6 +138,9 @@ def list_quizzes_for_student():
 			# If status explicitly says published, use that; otherwise default to 'published'
 			state = t.status if getattr(t, 'status', None) else 'published'
 
+		if state== 'not_published':
+			continue  # skip quizzes that are not published
+		
 		can_attempt = (state == 'active') and (not completed)
 
 		result.append({
@@ -241,22 +239,24 @@ def list_questions_for_quiz(test_id: int):
 		return jsonify({"error": "Quiz is not active"}), 403
 
 	# Ensure student has not attempted this quiz (any attempt record)
-	attempted = Student_Test_Attempt.query.filter_by(test_id=quiz_id, student_id=user.id).first() is not None
+	attempted = Student_Test_Attempt.query.filter_by(test_id=test_id, student_id=user.id).first() is not None
 	if attempted:
 		return jsonify({"error": "Quiz already attempted by student"}), 403
 
 	# Fetch questions (do NOT return correct_options)
-	qs = Questions.query.filter_by(test_id=quiz_id).all()
+	qs = Questions.query.filter_by(test_id=test_id).all()
 	questions = []
 	for q in qs:
 		questions.append({
 			"question_id": q.question_id,
 			"question_text": q.question_text,
 			"options": json.loads(q.options) if getattr(q, 'options', None) else None,
-			"marks": q.marks
+			"marks": q.marks,
+			"question_type": q.question_type,
+			"difficulty_level": q.difficulty_level,
 		})
 
-	return jsonify({"quiz_id": quiz_id, "questions": questions}), 200
+	return jsonify({"quiz_id": test_id, "questions": questions}), 200
 
 
 @student_bp.route('/start_attempt/<int:test_id>', methods=['POST'])
