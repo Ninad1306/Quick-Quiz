@@ -307,14 +307,20 @@ def modify_quiz(user, quiz_id):
         # quiz_update_data = data['quiz_obj']
         test_obj = Tests.query.get(quiz_id)
         
-        old_num_questions = int(test_obj.total_questions)
-        new_num_questions = int(quiz_update_data['total_questions']) + old_num_questions
+        old_num_questions = len(Questions.query.filter_by(test_id=quiz_id).all())
+        new_num_questions = int(quiz_update_data['total_questions']) if 'total_questions' in quiz_update_data.keys() else old_num_questions
+        print(f"Old: {old_num_questions}. New: {new_num_questions}")
         new_total_marks = quiz_update_data['total_marks'] if 'total_marks' in quiz_update_data.keys() else test_obj.total_marks
 
         if old_num_questions < new_num_questions:
 
             course_obj = Courses.query.filter_by(course_id=test_obj.course_id).first()
-            result = generate_quiz(course_obj.course_name, course_obj.course_level, course_obj.course_objectives, test_obj.title, test_obj.description, test_obj.difficulty_level, new_num_questions-old_num_questions, new_total_marks)
+
+            question_objs = Questions.query.filter_by(test_id=quiz_id).all()
+            old_questions = '.\n'.join([q.question_text for q in question_objs])
+            description = test_obj.description + ". These are the old questions, do not repeat them: <questions_start>" + old_questions + "<questions_end>"
+
+            result = generate_quiz(course_obj.course_name, course_obj.course_level, course_obj.course_objectives, test_obj.title, description, test_obj.difficulty_level, new_num_questions-old_num_questions, new_total_marks)
             question_objects = []
     
             for item in result:
@@ -337,6 +343,10 @@ def modify_quiz(user, quiz_id):
             
             db.session.add_all(question_objects)
 
+        if old_num_questions > new_num_questions:
+            for q in Questions.query.filter_by(test_id=quiz_id).limit(old_num_questions-new_num_questions):
+                db.session.delete(q)
+        
         recalibrate_marks(quiz_id, new_total_marks)
 
         for field in ["title", "description", "difficulty_level", "duration_minutes", "total_questions", "total_marks", "passing_marks"]: # ["question_text", "options", "correct_answer", "tags", "marks"]
