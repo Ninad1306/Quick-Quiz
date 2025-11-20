@@ -208,15 +208,14 @@ def publish_quiz(user, quiz_id):
     try:
         data = request.get_json()
         start_time_str = data["start_time"]
-        start_time = datetime.fromisoformat(start_time_str.replace("Z", "+00:00")) # We assume time coming from frontend is in UTC of format "2025-11-18T14:30:00Z"
-        now = datetime.now(timezone.utc)
+        start_time = datetime.fromisoformat(start_time_str)
+        local_tz = pytz.timezone("Asia/Kolkata")
+        start_time = local_tz.localize(start_time)
+        now = datetime.now(local_tz)
 
         if start_time <= now:
             raise ValueError(f"Start time has already passed.")
         
-        local_tz = pytz.timezone("Asia/Kolkata")
-        start_time = start_time.astimezone(local_tz)
-
         test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).with_for_update().first()
         if not test_obj:
             return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
