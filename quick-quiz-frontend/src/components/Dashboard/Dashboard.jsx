@@ -104,6 +104,35 @@ const MainPage = ({ user, onLogout }) => {
     fetchCourses(user.role);
   };
 
+  const onDeleteCourse = async (courseId) => {
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
+    const res = await axios.post(`${API_BASE_URL}/teacher/delete_course/${courseId}`, {}, {
+      headers,
+    });
+    
+    if(res.status === 200){
+      fetchCourses(user.role);
+    }
+  };
+
+  const onDeleteQuiz = async (id) => {
+    const header = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
+
+    const res = await axios.post(
+      `${API_BASE_URL}/teacher/delete_quiz/${id}`,
+      {},
+      { headers: header }
+    );
+
+    if (res.status === 200) {
+      fetchQuizzes(user.role);
+    }
+  };
+
   const handleEnroll = async (courseId) => {
     await axios.post(
       `${API_BASE_URL}/student/enroll`,
@@ -190,11 +219,10 @@ const MainPage = ({ user, onLogout }) => {
           course={selectedCourse}
           quizzes={quizzes}
           userRole={user.role}
-          onSelectQuiz={handleQuizClick}
           onBack={handleBackToCourses}
-          onAddQuiz={() => setShowAddQuizModal(true)}
           onViewAnalytics={handleViewAnalytics}
           onClickQuiz={handleQuizClick}
+          onDeleteQuiz={onDeleteQuiz}
         />
       );
     } else {
@@ -233,6 +261,7 @@ const MainPage = ({ user, onLogout }) => {
                   course={course}
                   userRole={user.role}
                   onClick={() => handleCourseClick(course)}
+                  onDeleteCourse={onDeleteCourse}
                 />
               ))}
             </div>

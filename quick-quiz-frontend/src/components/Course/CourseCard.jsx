@@ -4,16 +4,8 @@ import Button from "../Utils/Button";
 import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 
-const CourseCard = ({ course, userRole, onClick }) => {
-  const onDeleteCourse = async (courseId) => {
-    const headers = {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    };
-    await axios.post(`${API_BASE_URL}/teacher/delete_course/${courseId}`, {}, {
-      headers,
-    });
-    window.location.reload();
-  };
+const CourseCard = ({ course, userRole, onClick, onDeleteCourse }) => {
+
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition ">

@@ -8,27 +8,14 @@ const Course = ({
   course,
   quizzes,
   userRole,
-  onSelectQuiz,
   onBack,
-  onAddQuiz,
   onViewAnalytics,
   onClickQuiz,
+  onDeleteQuiz,
 }) => {
   const canAttempQuiz = (role, can_attempt) => {
     if (role === "student" && !can_attempt) return false;
     return true;
-  };
-
-  const onDeleteQuiz = async (id) => {
-    const header = {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    };
-
-    await axios.post(
-      `${API_BASE_URL}/teacher/delete_quiz/${id}`,
-      {},
-      { headers: header }
-    );
   };
 
   return (
