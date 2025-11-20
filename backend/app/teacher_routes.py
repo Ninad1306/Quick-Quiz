@@ -403,3 +403,43 @@ def add_quiz_questions(user, quiz_id):
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({'error': f"Exception occurred: {e}"}), 400
+
+@teacher_bp.route('/delete_quiz/<quiz_id>', methods=['POST'])
+@teacher_required
+def delete_quiz(user, quiz_id):
+
+    try:
+        
+        test_obj = Tests.query.filter_by(created_by=user.id, test_id=quiz_id).first()
+        if not test_obj:
+            return jsonify({'error': f"Quiz with ID: {quiz_id} not found for current user."}), 400
+        
+        test = Tests.query.filter_by(test_id=quiz_id).first()
+        db.session.delete(test)
+        db.session.commit()
+
+        return jsonify({'message': 'Test and associated questions have been deleted.'}), 200
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({'error': f"Exception occurred: {e}"}), 400
+
+@teacher_bp.route('/delete_course/<course_id>', methods=['POST'])
+@teacher_required
+def delete_course(user, course_id):
+
+    try:
+        
+        obj = Teacher_Courses_Map.query.filter_by(teacher_id=user.id, course_id=course_id).first()
+        if not obj:
+            return jsonify({'error': f"Course with ID: {course_id} not found for current user."}), 400
+        
+        course = Courses.query.get(course_id)
+        db.session.delete(course)
+        db.session.commit()
+
+        return jsonify({'message': f'Course with ID {course_id} and its related data have been deleted.'}), 200
+    
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({'error': f"Exception occurred: {e}"}), 400

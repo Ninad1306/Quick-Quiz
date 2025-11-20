@@ -57,7 +57,7 @@ class Teacher_Courses_Map(db.Model):
     __tablename__ = 'teacher_courses_map'
 
     teacher_id = mapped_column(Integer, ForeignKey('user.id'), nullable=False)
-    course_id = mapped_column(String(64), ForeignKey('courses.course_id'), nullable=False)
+    course_id = mapped_column(String(64), ForeignKey('courses.course_id', ondelete='CASCADE'), nullable=False)
     offered_at = mapped_column(String(64), nullable=False)
 
     __table_args__ = (
@@ -110,7 +110,7 @@ class Tests(db.Model):
     __tablename__ = 'tests'
 
     test_id = mapped_column(Integer, primary_key=True)
-    course_id = mapped_column(String(64), ForeignKey('courses.course_id'), nullable=False)
+    course_id = mapped_column(String(64), ForeignKey('courses.course_id', ondelete='CASCADE'), nullable=False)
     title = mapped_column(String(128), nullable=False)
     description = mapped_column(String(512), nullable=True)
     difficulty_level = mapped_column(String(32), nullable=False) # Options: Easy, Medium, Hard
@@ -125,6 +125,13 @@ class Tests(db.Model):
     
     __table_args__ = (
         db.UniqueConstraint('course_id', 'title', name='uix_course_title'),
+    )
+
+    questions = relationship(
+        'Questions', 
+        back_populates='test',
+        cascade='all, delete-orphan',
+        passive_deletes=True
     )
 
     @validates('course_id')
@@ -200,7 +207,7 @@ class Questions(db.Model):
 
     question_id = mapped_column(Integer, primary_key=True)
     question_type = mapped_column(String(32), nullable=False)
-    test_id = mapped_column(Integer, ForeignKey('tests.test_id'), nullable=False)
+    test_id = mapped_column(Integer, ForeignKey('tests.test_id', ondelete='CASCADE'), nullable=False)
     question_text = mapped_column(String(1024), nullable=False)
     options = mapped_column(String(1024), nullable=True)
     correct_answer = mapped_column(String(32), nullable=False)  # e.g., 'A', 'B', 'C', 'D' or ['A','B'] for multiple correct options
@@ -211,6 +218,11 @@ class Questions(db.Model):
     created_at = mapped_column(DateTime, default=sql.func.now(), nullable=False)
     __table_args__ = (
         db.UniqueConstraint('test_id', 'question_text', name='uix_test_question'),
+    )
+
+    test = relationship(
+        'Tests', 
+        back_populates='questions'
     )
 
     @validates('question_text')
