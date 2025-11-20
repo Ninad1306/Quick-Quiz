@@ -47,6 +47,41 @@ def is_test_active(test):
 
 # ==================== COURSE ENROLLMENT ====================
 
+@student_bp.route('/unenroll', methods=['DELETE'])
+@jwt_required()
+def unenroll_course():
+    """Unenroll student from a course"""
+    user, error_response, status_code = get_current_student()
+    if error_response:
+        return error_response, status_code
+
+    data = request.get_json()
+    course_id = data.get('course_id')
+
+    if not course_id:
+        return jsonify({"error": "Missing course_id"}), 400
+
+    # Check if enrollment exists
+    enrollment = Student_Courses_Map.query.filter_by(
+        student_id=user.id,
+        course_id=course_id
+    ).first()
+
+    if not enrollment:
+        return jsonify({"error": "Not enrolled in this course"}), 404
+
+    try:
+        db.session.delete(enrollment)
+        db.session.commit()
+        return jsonify({
+            "message": "Unenrolled successfully",
+            "student_id": user.id,
+            "course_id": course_id
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Unenrollment failed: {str(e)}"}), 500
+
 @student_bp.route('/enroll', methods=['POST'])
 @jwt_required()
 def enroll_course():
