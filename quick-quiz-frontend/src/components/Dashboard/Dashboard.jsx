@@ -9,7 +9,7 @@ import AddCourse from "../Modal/AddCourse";
 import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 import TeacherQuizManagement from "../Quiz/TeacherQuizManagement";
-
+import StudentQuizAttempt from "../Quiz/StudentQuizAttempt";
 
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
@@ -33,19 +33,27 @@ const MainPage = ({ user, onLogout }) => {
 
   const fetchQuizzes = async (role) => {
     setTimeout(async () => {
-      if (role !== "teacher") return;
-
+      let res;
       const headers = {
         Authorization: "Bearer " + localStorage.getItem("token"),
       };
 
-      const res = await axios.get(
-        `${API_BASE_URL}/teacher/list_quiz/${selectedCourse?.course_id}`,
-        {
-          headers,
-        }
-      );
-      
+      if (role === "teacher") {
+        res = await axios.get(
+          `${API_BASE_URL}/teacher/list_quiz/${selectedCourse?.course_id}`,
+          {
+            headers,
+          }
+        );
+      } else {
+        res = await axios.get(
+          `${API_BASE_URL}/student/list_quizzes/${selectedCourse?.course_id}`,
+          {
+            headers,
+          }
+        );
+      }
+
       setQuizzes(res.data);
     }, 500);
   };
@@ -154,6 +162,18 @@ const MainPage = ({ user, onLogout }) => {
 
   const content = () => {
     if (selectedQuiz) {
+      if (user.role === "student") {
+        return (
+          <StudentQuizAttempt
+            quiz={selectedQuiz}
+            onBack={() => {
+              setSelectedQuiz(null);
+              setCurrentView("course");
+            }}
+          />
+        );
+      }
+
       return (
         <TeacherQuizManagement
           quiz={selectedQuiz}
@@ -253,8 +273,6 @@ const MainPage = ({ user, onLogout }) => {
         courseId={selectedCourse?.course_id}
         onSubmit={handleAddQuiz}
       />
-
-      
     </div>
   );
 };

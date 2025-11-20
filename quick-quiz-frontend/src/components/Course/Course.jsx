@@ -13,6 +13,11 @@ const Course = ({
   onAddQuiz,
   onViewAnalytics,
 }) => {
+  const canAttempQuiz = (role, can_attempt) => {
+    if (role === "student" && !can_attempt) return false;
+    return true;
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
@@ -124,6 +129,7 @@ const Course = ({
                   onClick={() => onSelectQuiz(quiz, userRole)}
                   variant="primary"
                   className="w-full"
+                  disabled={!canAttempQuiz(userRole, quiz.can_attempt)}
                 >
                   {userRole === "teacher" ? "Manage" : "Take Quiz"}
                 </Button>

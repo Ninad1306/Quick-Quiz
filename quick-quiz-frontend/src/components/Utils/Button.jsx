@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Button = ({ onClick, children, variant = 'primary', className = '', icon: Icon }) => {
+const Button = ({ onClick, children, variant = 'primary', className = '', disabled, icon: Icon }) => {
   const variants = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700',
     secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
@@ -11,7 +11,8 @@ const Button = ({ onClick, children, variant = 'primary', className = '', icon: 
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-md transition flex items-center gap-2 ${variants[variant]} ${className}`}
+      className={`px-4 py-2 rounded-md transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${className}`}
+      disabled={disabled}
     >
       {Icon && <Icon size={18} />}
       {children}

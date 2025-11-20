@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Clock, AlertCircle, CheckCircle } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
+import axios from "axios";
 
-const StudentQuizAttempt = ({ quiz, courseId, onBack }) => {
+const StudentQuizAttempt = ({ quiz, onBack }) => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -44,18 +45,18 @@ const StudentQuizAttempt = ({ quiz, courseId, onBack }) => {
   const fetchQuestions = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/student/quiz_questions/${quiz.test_id}`,
+        `${API_BASE_URL}/student/list_questions/${quiz.test_id}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
       const data = response.data;
 
-      if (response.statusText === "OK") {
-        setQuestions(data);
+      if (response.status === 200) {
+        setQuestions(data["questions"]);
       }
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -311,3 +312,5 @@ const StudentQuizAttempt = ({ quiz, courseId, onBack }) => {
     </div>
   );
 };
+
+export default StudentQuizAttempt;
