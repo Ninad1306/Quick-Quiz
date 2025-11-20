@@ -6,7 +6,7 @@ from functools import wraps
 from app.utils import get_current_semester_and_year, activate_test, deactivate_test, recalibrate_marks
 from app.quizgen import generate_quiz
 import json, pytz, traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -209,7 +209,7 @@ def publish_quiz(user, quiz_id):
         data = request.get_json()
         start_time_str = data["start_time"]
         start_time = datetime.fromisoformat(start_time_str.replace("Z", "+00:00")) # We assume time coming from frontend is in UTC of format "2025-11-18T14:30:00Z"
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
 
         if start_time <= now:
             raise ValueError(f"Start time has already passed.")
