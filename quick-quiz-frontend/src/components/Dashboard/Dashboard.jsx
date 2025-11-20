@@ -129,6 +129,7 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const handleQuizClick = (quiz, role) => {
+    if (role === "student" && !quiz.can_attempt) return;
     setSelectedQuiz(quiz);
     setCurrentView("quiz");
   };
@@ -193,6 +194,7 @@ const MainPage = ({ user, onLogout }) => {
           onBack={handleBackToCourses}
           onAddQuiz={() => setShowAddQuizModal(true)}
           onViewAnalytics={handleViewAnalytics}
+          onClickQuiz={handleQuizClick}
         />
       );
     } else {

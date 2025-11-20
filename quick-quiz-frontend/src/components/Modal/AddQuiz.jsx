@@ -22,7 +22,7 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
     });
 
     setQuizData({
-    title: "Quiz 1",
+    title: "",
     description: "",
     difficulty_level: "Easy",
     duration_minutes: 60,

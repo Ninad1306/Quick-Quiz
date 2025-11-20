@@ -12,10 +12,23 @@ const Course = ({
   onBack,
   onAddQuiz,
   onViewAnalytics,
+  onClickQuiz,
 }) => {
   const canAttempQuiz = (role, can_attempt) => {
     if (role === "student" && !can_attempt) return false;
     return true;
+  };
+
+  const onDeleteQuiz = async (id) => {
+    const header = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
+
+    await axios.post(
+      `${API_BASE_URL}/teacher/delete_quiz/${id}`,
+      {},
+      { headers: header }
+    );
   };
 
   return (
@@ -87,52 +100,69 @@ const Course = ({
                 key={quiz.test_id}
                 className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-bold text-lg text-gray-800">
-                    {quiz.title}
-                  </h4>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      quiz.difficulty_level === "Easy"
-                        ? "bg-green-100 text-green-700"
-                        : quiz.difficulty_level === "Medium"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {quiz.difficulty_level}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
-                  <div className="flex justify-between">
-                    <span>Duration:</span>
-                    <span className="font-medium">
-                      {quiz.duration_minutes} min
+                <div
+                  onClick={onClickQuiz.bind(null, quiz, userRole)}
+                  className={`${
+                    !canAttempQuiz(userRole, quiz.can_attempt)
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-bold text-lg text-gray-800">
+                      {quiz.title}
+                    </h4>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        quiz.difficulty_level === "Easy"
+                          ? "bg-green-100 text-green-700"
+                          : quiz.difficulty_level === "Medium"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {quiz.difficulty_level}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Total Marks:</span>
-                    <span className="font-medium">{quiz.total_marks}</span>
-                  </div>
-                  {quiz.published_at && (
+
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
                     <div className="flex justify-between">
-                      <span>Published:</span>
+                      <span>Duration:</span>
                       <span className="font-medium">
-                        {new Date(quiz.published_at).toLocaleDateString()}
+                        {quiz.duration_minutes} min
                       </span>
                     </div>
-                  )}
+                    <div className="flex justify-between">
+                      <span>Total Marks:</span>
+                      <span className="font-medium">{quiz.total_marks}</span>
+                    </div>
+                    {quiz.published_at && (
+                      <div className="flex justify-between">
+                        <span>Published:</span>
+                        <span className="font-medium">
+                          {new Date(quiz.published_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                    {userRole === "student" && quiz.start_time && (
+                      <div className="flex justify-between">
+                        <span>Start Time:</span>
+                        <span className="font-medium">
+                          {new Date(quiz.start_time).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-                <Button
-                  onClick={() => onSelectQuiz(quiz, userRole)}
-                  variant="primary"
-                  className="w-full"
-                  disabled={!canAttempQuiz(userRole, quiz.can_attempt)}
-                >
-                  {userRole === "teacher" ? "Manage" : "Take Quiz"}
-                </Button>
+                {userRole === "teacher" && (
+                  <Button
+                    onClick={() => onDeleteQuiz(quiz.test_id)}
+                    variant="danger"
+                    className="w-full"
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             ))}
           </div>

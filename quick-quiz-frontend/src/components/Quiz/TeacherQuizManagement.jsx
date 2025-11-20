@@ -171,14 +171,14 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
               </button>
             )}
 
-            {
+            {quiz.status !== "completed" && (
               <DropdownButton
                 onAddQuestions={() => setShowAddQuestions(true)}
                 onAddManualQuestion={() => setShowAddManual(true)}
                 onDeleteQuestions={() => setShowDeleteQuestions(true)}
                 onModifyDuration={() => setShowModifyDuration(true)}
               />
-            }
+            )}
           </div>
         </div>
 

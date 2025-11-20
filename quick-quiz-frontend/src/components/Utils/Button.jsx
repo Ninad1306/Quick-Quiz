@@ -5,7 +5,8 @@ const Button = ({ onClick, children, variant = 'primary', className = '', disabl
     primary: 'bg-blue-600 text-white hover:bg-blue-700',
     secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300',
     success: 'bg-green-600 text-white hover:bg-green-700',
-    ghost: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+    ghost: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+    danger: 'bg-red-600 text-white hover:bg-red-700',
   };
 
   return (
