@@ -192,7 +192,7 @@ def get_available_courses():
 
 @student_bp.route('/list_questions/<int:test_id>', methods=['GET'])
 @jwt_required()
-def list_questions_for_quiz(quiz_id: int):
+def list_questions_for_quiz(test_id: int):
 	"""Return questions for a quiz if the quiz is active and the student hasn't attempted it.
 
 	- Only students enrolled in the course can list questions.

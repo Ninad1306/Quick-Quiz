@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
+import axios from "axios";
 
 function RegisterForm({ onSuccess }) {
   const [formData, setFormData] = useState({
@@ -45,7 +46,7 @@ function RegisterForm({ onSuccess }) {
 
       const data = response.data;
 
-      if (response.statusText === "OK") {
+      if (response.status === 201) {
         setSuccess(true);
         setTimeout(() => {
           onSuccess();

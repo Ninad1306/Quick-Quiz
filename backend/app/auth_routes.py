@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from app import bcrypt, db
 from app.models import User
 import re
+from datetime import timedelta
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -93,7 +94,7 @@ def auth_login():
     if not bcrypt.check_password_hash(user.password, password):
         return jsonify({"error": "Invalid Credentials"}), 401
     
-    access_token = create_access_token(identity=email_id, additional_claims={"role": user.role, "name": user.name})
+    access_token = create_access_token(identity=email_id, additional_claims={"role": user.role, "name": user.name}, expires_delta=timedelta(days=2))
     
     return jsonify({
         "message": "login successful",
