@@ -1,6 +1,6 @@
 from sqlalchemy.orm import mapped_column, relationship, validates
 from sqlalchemy import Integer, String, DateTime, ForeignKey, Text, Float
-from sqlalchemy import sql
+from sqlalchemy import sql, event
 from flask_sqlalchemy import SQLAlchemy
 from app.constants import *
 import re, json
@@ -233,16 +233,12 @@ class Questions(db.Model):
         if isinstance(options, str):
             try:
                 options = json.loads(options)
-            except Exception as e:
+            except Exception:
                 raise ValueError("Failed to convert options to JSON")
-        
-        qtype = self.question_type.lower()
-        from app.utils import validate_options_list
 
-        if qtype == 'mcq' or qtype == 'msq':
-            if not validate_options_list(options): #(isinstance(options, list) and all(isinstance(opt, str) for opt in options)):
-                options = validate_options_list
-        
+        if not isinstance(options, list):
+            raise ValueError("Options must be JSON-serializable list")
+
         return json.dumps(options)
 
 
@@ -255,24 +251,6 @@ class Questions(db.Model):
                     correct_answer = json.loads(correct_answer)
             except Exception as e:
                 raise ValueError(f"Failed to convert correct_answer to JSON: {e}")
-
-        qtype = self.question_type.lower()
-
-        if qtype == 'mcq':
-            if not isinstance(correct_answer, str):
-                raise ValueError("MCQ correct_answer must be a single string")
-        
-        elif qtype == 'msq':
-            if not (isinstance(correct_answer, list) and all(isinstance(ans, str) for ans in correct_answer)):
-                raise ValueError("MSQ correct_answer must be a list of strings")
-        
-        elif qtype == 'nat':
-            if not isinstance(correct_answer, int):
-                raise ValueError("NAT correct_answer must be an integer")
-        
-        else:
-            raise ValueError("Invalid question_type")
-        
         return json.dumps(correct_answer)
 
     @validates('tags')
@@ -308,6 +286,38 @@ class Questions(db.Model):
             "marks": self.marks,
             "question_type": self.question_type
         }
+
+@event.listens_for(Questions, "before_insert")
+@event.listens_for(Questions, "before_update")
+def validate_question(mapper, connection, target):
+    qtype = target.question_type.lower()
+    options = json.loads(target.options) if isinstance(target.options, str) else target.options
+    
+    if isinstance(target.correct_answer, str):
+        if target.correct_answer.isdigit():
+            answer = int(target.correct_answer)
+        elif len(target.correct_answer) == 3:
+            answer = target.correct_answer
+        else:
+            answer = json.loads(target.correct_answer)
+    elif isinstance(target.correct_answer, list):
+        answer = json.loads(target.correct_answer)
+    else:
+        raise ValueError(f"Invalid correct_answer data type.")
+
+
+    if qtype in ('mcq', 'msq') and not (isinstance(options, list) and options):
+        raise ValueError(f"{qtype.upper()} question requires a non-empty list of options")
+
+    if qtype == 'mcq' and not isinstance(answer, str):
+        raise ValueError("MCQ correct_answer must be a single string")
+
+    if qtype == 'msq' and not (isinstance(answer, list) and all(isinstance(a, str) for a in answer)):
+        raise ValueError("MSQ correct_answer must be a list of strings")
+
+    if qtype == 'nat' and not isinstance(answer, int):
+        raise ValueError("NAT correct_answer must be an integer")
+
 
 class Student_Test_Question_Attempt(db.Model):
     __tablename__ = 'student_test_question_attempt'

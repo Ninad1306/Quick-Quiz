@@ -309,7 +309,7 @@ def modify_quiz(user, quiz_id):
         
         old_num_questions = len(Questions.query.filter_by(test_id=quiz_id).all())
         new_num_questions = int(quiz_update_data['total_questions']) if 'total_questions' in quiz_update_data.keys() else old_num_questions
-        print(f"Old: {old_num_questions}. New: {new_num_questions}")
+        
         new_total_marks = quiz_update_data['total_marks'] if 'total_marks' in quiz_update_data.keys() else test_obj.total_marks
 
         if old_num_questions < new_num_questions:
