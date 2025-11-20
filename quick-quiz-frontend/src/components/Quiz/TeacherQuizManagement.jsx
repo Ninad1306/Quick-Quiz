@@ -61,10 +61,14 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
       const data = response.data;
 
-      if (response.statusText === "OK") {
+      if (response.status === 200) {
         setMessage({ type: "success", text: "Quiz published successfully!" });
+        setQuizData({
+          ...quizData,
+          status: "published",
+          start_time: publishForm.start_time,
+        });
         setShowPublishModal(false);
-        onUpdate();
       } else {
         setMessage({
           type: "error",
@@ -76,38 +80,6 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     }
     setLoading(false);
   };
-
-  // const handleModifyTime = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await axios.post(
-  //       `${API_BASE_URL}/teacher/modify_quiz/${quiz.test_id}`,
-  //       { extra_time: extraTime },
-  //       {
-  //         headers: getAuthHeaders(),
-  //       }
-  //     );
-
-  //     const data = response.data;
-
-  //     if (response.statusText === "OK") {
-  //       setMessage({
-  //         type: "success",
-  //         text: "Quiz duration updated successfully!",
-  //       });
-  //       setShowModifyModal(false);
-  //       onUpdate();
-  //     } else {
-  //       setMessage({
-  //         type: "error",
-  //         text: data.error || "Failed to modify quiz",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     setMessage({ type: "error", text: "Error modifying quiz" });
-  //   }
-  //   setLoading(false);
-  // };
 
   const getStatusBadge = (status) => {
     const colors = {
