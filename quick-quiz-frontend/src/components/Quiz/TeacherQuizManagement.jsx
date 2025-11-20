@@ -6,6 +6,7 @@ import AddQuestions from "../Modal/AddQuestions";
 import DeleteQuestions from "../Modal/DeleteQuestions";
 import ModifyDuration from "../Modal/ModifyDuration";
 import AddManualQuestion from "../Modal/AddManualQuestion";
+import PublishQuiz from "../Modal/PublishQuiz";
 import axios from "axios";
 
 const getAuthHeaders = () => ({
@@ -16,16 +17,6 @@ const getAuthHeaders = () => ({
 const TeacherQuizManagement = ({ quiz, onBack }) => {
   const [quizData, setQuizData] = useState(quiz);
   const [questions, setQuestions] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    title: quiz.title,
-    description: quiz.description,
-    duration_minutes: quiz.duration_minutes,
-    passing_marks: quiz.passing_marks,
-  });
-  const [publishForm, setPublishForm] = useState({
-    start_time: "",
-  });
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -36,7 +27,7 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
   useEffect(() => {
     fetchQuestions();
-  }, [quiz.test_id]);
+  }, [quiz.test_id, showAddQuestions, showDeleteQuestions, showAddManual]);
 
   const fetchQuestions = async () => {
     try {
@@ -57,7 +48,7 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     }
   };
 
-  const handlePublish = async () => {
+  const handlePublish = async (publishForm) => {
     setLoading(true);
     try {
       const response = await axios.post(
@@ -289,45 +280,12 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
       {/* Publish Modal */}
       {showPublishModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Publish Quiz</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
-                Start Time (UTC)
-              </label>
-              <input
-                type="datetime-local"
-                value={publishForm.start_time}
-                onChange={(e) =>
-                  setPublishForm({
-                    ...publishForm,
-                    start_time: e.target.value + ":00Z",
-                  })
-                }
-                className="w-full p-2 border rounded-lg"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Select when students can start attempting the quiz
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handlePublish}
-                disabled={loading || !publishForm.start_time}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? "Publishing..." : "Publish"}
-              </button>
-              <button
-                onClick={() => setShowPublishModal(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <PublishQuiz
+          show={showPublishModal}
+          onClose={() => setShowPublishModal(false)}
+          onSubmit={handlePublish}
+          loading={loading}
+        />
       )}
 
       <AddQuestions

@@ -88,8 +88,8 @@ const AddManualQuestion = ({ show, onClose, quizId }) => {
       );
 
       const data = response.data;
-
-      if (response.statusText !== "OK") {
+      
+      if (response.status !== 201) {
         throw new Error(data.error || "Failed to add question");
       }
 
