@@ -433,12 +433,8 @@ def modify_quiz(user, quiz_id):
         test_obj = Tests.query.get(quiz_id)
 
         old_num_questions = len(Questions.query.filter_by(test_id=quiz_id).all())
-        new_num_questions = (
-            int(quiz_update_data["total_questions"])
-            if "total_questions" in quiz_update_data.keys()
-            else old_num_questions
-        )
-        new_num_questions += old_num_questions
+        delta_questions = int(quiz_update_data.get("total_questions", 0))
+        new_num_questions = old_num_questions + delta_questions
 
         new_total_marks = (
             quiz_update_data["total_marks"]
@@ -504,6 +500,9 @@ def modify_quiz(user, quiz_id):
 
         recalibrate_marks(quiz_id, new_total_marks)
 
+        if "total_questions" in quiz_update_data:
+            quiz_update_data["total_questions"] = new_num_questions
+
         for field in [
             "title",
             "description",
@@ -512,7 +511,7 @@ def modify_quiz(user, quiz_id):
             "total_questions",
             "total_marks",
             "passing_marks",
-        ]:  # ["question_text", "options", "correct_answer", "tags", "marks"]
+        ]:
             if field in quiz_update_data:
                 setattr(test_obj, field, quiz_update_data[field])
 

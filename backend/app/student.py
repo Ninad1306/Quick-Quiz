@@ -48,16 +48,13 @@ def is_test_active(test):
     return start_time <= now <= end_time
 
 
-@student_bp.route("/unenroll", methods=["DELETE"])
+@student_bp.route("/unenroll/<course_id>", methods=["DELETE"])
 @jwt_required()
-def unenroll_course():
+def unenroll_course(course_id):
     """Unenroll student from a course"""
     user, error_response, status_code = get_current_student()
     if error_response:
         return error_response, status_code
-
-    data = request.get_json()
-    course_id = data.get("course_id")
 
     if not course_id:
         return jsonify({"error": "Missing course_id"}), 400
