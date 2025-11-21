@@ -542,7 +542,7 @@ def add_quiz_questions(user, quiz_id):
             return jsonify({"error": "Payload should be list of question objects"}), 400
 
         questions = []
-        new_total_marks = int(test_obj.total_marks)
+        marks_to_add = 0
 
         for item in data:
             obj = Questions(
@@ -555,12 +555,14 @@ def add_quiz_questions(user, quiz_id):
                 marks=item.get("marks", None),
                 difficulty_level=item.get("difficulty_level", None),
             )
-            new_total_marks += item.get("marks", 0)
+            marks_to_add += item.get("marks", 0)
             questions.append(obj)
 
-        recalibrate_marks(quiz_id, new_total_marks)
-
         db.session.add_all(questions)
+
+        test_obj.total_questions += len(questions)
+        test_obj.total_marks += marks_to_add
+
         db.session.commit()
 
         return jsonify({"message": "Questions added successfully."}), 201
