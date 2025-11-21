@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 import Dashboard from "./components/Dashboard/Dashboard";
 import LoginForm from "./components/Login/LoginForm";
 import RegisterForm from "./components/Login/RegisterForm";
@@ -27,11 +27,10 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    if(token && isTokenExpired(token)){
+    if (token && isTokenExpired(token)) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-    }
-    else if (token && storedUser) {
+    } else if (token && storedUser) {
       setIsAuthenticated(true);
       setUser(JSON.parse(storedUser));
     }

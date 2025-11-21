@@ -4,12 +4,7 @@ import Modal from "../Utils/Modal";
 import axios from "axios";
 import { API_BASE_URL } from "../../constants";
 
-const ModifyDuration = ({
-  show,
-  onClose,
-  quizId,
-  currentDuration,
-}) => {
+const ModifyDuration = ({ show, onClose, quizId, currentDuration }) => {
   const [extraTime, setExtraTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

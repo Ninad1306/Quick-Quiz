@@ -22,14 +22,14 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
     });
 
     setQuizData({
-    title: "",
-    description: "",
-    difficulty_level: "Easy",
-    duration_minutes: 60,
-    total_marks: 10,
-    total_questions: 1,
-    passing_marks: 4,
-  });
+      title: "",
+      description: "",
+      difficulty_level: "Easy",
+      duration_minutes: 60,
+      total_marks: 10,
+      total_questions: 1,
+      passing_marks: 4,
+    });
   };
 
   return (

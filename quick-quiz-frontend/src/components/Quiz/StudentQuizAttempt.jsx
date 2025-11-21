@@ -2,28 +2,26 @@ import React, { useState, useEffect } from "react";
 import { Clock, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import axios from "axios";
-import Button from "../Utils/Button"; // Assuming you have this component
+import Button from "../Utils/Button";
 
 const StudentQuizAttempt = ({ quiz, onBack }) => {
   const [attemptId, setAttemptId] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({}); // Map: { questionId: answer }
+  const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [scoreData, setScoreData] = useState(null); // To store result after submit
+  const [scoreData, setScoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 1. Initialize Quiz: Start Attempt & Fetch Questions
   useEffect(() => {
     const initializeQuiz = async () => {
       try {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Step A: Start Attempt to get ID
         const startRes = await axios.post(
           `${API_BASE_URL}/student/start_attempt/${quiz.test_id}`,
           {},
@@ -45,14 +43,12 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         const newAttemptId = data.attempt_id;
         setAttemptId(newAttemptId);
 
-        // Step B: Fetch Questions
         const qRes = await axios.get(
           `${API_BASE_URL}/student/list_questions/${quiz.test_id}`,
           { headers }
         );
         setQuestions(qRes.data.questions);
 
-        // Step C: Setup Timer
         calculateTimeRemaining();
         setLoading(false);
       } catch (err) {
@@ -68,7 +64,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     initializeQuiz();
   }, [quiz.test_id]);
 
-  // 2. Timer Logic
   useEffect(() => {
     if (timeRemaining !== null && timeRemaining > 0 && !submitted) {
       const timer = setInterval(() => {
@@ -85,7 +80,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   }, [timeRemaining, submitted]);
 
   const calculateTimeRemaining = () => {
-    // Assuming quiz window is fixed (start_time to start_time + duration)
     const startTime = new Date(quiz.start_time);
     const endTime = new Date(
       startTime.getTime() + quiz.duration_minutes * 60000
@@ -105,7 +99,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // 3. Handle Inputs
   const handleAnswerChange = (questionId, answer) => {
     setAnswers((prev) => ({
       ...prev,
@@ -124,8 +117,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
 
     setIsSubmitting(true);
     try {
-      // Transform answers map to list format expected by backend
-      // Backend expects: { answers: [{ question_id: 1, selected_options: "A" }, ...] }
       const formattedAnswers = Object.keys(answers).map((qId) => ({
         question_id: parseInt(qId),
         selected_options: answers[qId],
@@ -139,7 +130,7 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       );
 
       setSubmitted(true);
-      setScoreData(response.data); // Backend returns { score, per_question, attempt_id }
+      setScoreData(response.data);
     } catch (err) {
       console.error("Submit error:", err);
       alert("Failed to submit quiz. Please try again.");
@@ -147,8 +138,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       setIsSubmitting(false);
     }
   };
-
-  // --- RENDER STATES ---
 
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading Quiz...</div>;
@@ -199,13 +188,10 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     );
   }
 
-  // --- ACTIVE QUIZ RENDER ---
-
   const currentQ = questions[currentQuestionIndex];
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      {/* Header */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -227,7 +213,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-600 transition-all duration-300 ease-out"
@@ -240,7 +225,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         </div>
       </div>
 
-      {/* Question Card */}
       {currentQ && (
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8 border border-gray-100 min-h-[400px] flex flex-col">
           <div className="flex items-start gap-3 mb-6">
@@ -263,7 +247,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
           </h3>
 
           <div className="space-y-3 flex-grow">
-            {/* MCQ Options */}
             {currentQ.question_type === "mcq" &&
               currentQ.options?.map((opt) => (
                 <label
@@ -299,7 +282,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
                 </label>
               ))}
 
-            {/* MSQ Options */}
             {currentQ.question_type === "msq" &&
               currentQ.options?.map((opt) => {
                 const isSelected = (
@@ -343,7 +325,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
                 );
               })}
 
-            {/* NAT Input */}
             {currentQ.question_type === "nat" && (
               <div className="mt-4">
                 <input
@@ -364,7 +345,6 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         </div>
       )}
 
-      {/* Footer Navigation */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <Button
           variant="secondary"

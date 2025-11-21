@@ -1,8 +1,17 @@
-import React from 'react';
+import React from "react";
 
-const InputField = ({ label, type = 'text', value, onChange, required, placeholder, maxLength, rows }) => {
-  const Component = rows ? 'textarea' : 'input';
-  
+const InputField = ({
+  label,
+  type = "text",
+  value,
+  onChange,
+  required,
+  placeholder,
+  maxLength,
+  rows,
+}) => {
+  const Component = rows ? "textarea" : "input";
+
   return (
     <div>
       <label className="block text-sm font-medium mb-1">{label}</label>
@@ -20,4 +29,4 @@ const InputField = ({ label, type = 'text', value, onChange, required, placehold
   );
 };
 
-export default InputField; 
+export default InputField;
