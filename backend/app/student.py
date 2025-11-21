@@ -10,9 +10,11 @@ from app.models import (
     StudentTestAttempt,
     StudentQuestionAttempt,
 )
+from sqlalchemy import func
 from datetime import datetime, timedelta
 import json
 import pytz
+import numpy as np
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")
 
@@ -291,6 +293,7 @@ def start_attempt(test_id):
     ).first()
 
     if submitted_attempt:
+        end_time  = test.start_time + timedelta(minutes=test.duration_minutes)
         return (
             jsonify(
                 {
@@ -300,6 +303,7 @@ def start_attempt(test_id):
                     "percentage": submitted_attempt.percentage,
                     "passed": submitted_attempt.passed,
                     "time_taken_seconds": submitted_attempt.time_taken_seconds,
+                    "end_time": end_time.isoformat() if end_time else None,
                 }
             ),
             200,
@@ -845,3 +849,144 @@ def student_analytics(test_id):
     }
 
     return jsonify(analytics), 200
+
+@student_bp.route('/quiz_analytics/<int:attempt_id>', methods=['GET'])
+@jwt_required()
+def quiz_analytics(attempt_id):
+    current_email = get_jwt_identity()
+    user = User.query.filter_by(email=current_email).first()
+    
+    attempt = StudentTestAttempt.query.filter_by(
+        attempt_id=attempt_id, 
+        student_id=user.id
+    ).first()
+    
+    if not attempt:
+        return jsonify({"error": "Attempt not found"}), 404
+
+    test = Tests.query.get(attempt.test_id)
+    
+    # --- Constraint Check: Only show analytics after quiz end time ---
+    # Calculate End Time
+    start_dt = test.start_time
+    # Assuming start_time is timezone aware in DB, ensure comparison is consistent
+    end_dt = start_dt + timedelta(minutes=test.duration_minutes)
+
+    # Allow viewing if status is evaluated AND time has passed
+    # (For development, you might want to comment this time check out)
+    if datetime.now(start_dt.tzinfo) < end_dt:
+         return jsonify({
+            "status": "pending",
+            "message": "Analytics will be available after the quiz deadline ends.",
+            "end_time": end_dt.isoformat()
+         }), 200
+
+    # --- Aggregation Logic ---
+    question_attempts = StudentQuestionAttempt.query.filter_by(attempt_id=attempt_id).all()
+    
+    stats = {
+        "difficulty": {"easy": [0,0], "medium": [0,0], "hard": [0,0]}, # [obtained, total]
+        "type": {"mcq": [0,0], "msq": [0,0], "nat": [0,0]},
+        "tags": {} 
+    }
+
+    for qa in question_attempts:
+        q = qa.question # Relies on the relationship we added earlier
+        if not q: 
+            continue
+        
+        marks_obtained = qa.marks_obtained or 0
+        total_marks = q.marks
+        
+        # 1. Difficulty
+        diff = q.difficulty_level # Assuming 'Easy', 'Medium', 'Hard'
+        print(diff)
+        if diff in stats["difficulty"]:
+            stats["difficulty"][diff][0] += marks_obtained
+            stats["difficulty"][diff][1] += total_marks
+            
+        # 2. Type
+        qtype = q.question_type.lower()
+        if qtype in stats["type"]:
+            stats["type"][qtype][0] += marks_obtained
+            stats["type"][qtype][1] += total_marks
+            
+        # 3. Tags
+        try:
+            tags = json.loads(q.tags)
+            for tag in tags:
+                if tag not in stats["tags"]:
+                    stats["tags"][tag] = [0, 0]
+                stats["tags"][tag][0] += marks_obtained
+                stats["tags"][tag][1] += total_marks
+        except:
+            pass
+
+    return jsonify({
+        "status": "available",
+        "stats": stats,
+        "score": attempt.total_score,
+        "total_marks": test.total_marks
+    }), 200
+
+
+@student_bp.route('/course_analytics/<string:course_id>', methods=['GET'])
+@jwt_required()
+def course_analytics(course_id):
+    current_email = get_jwt_identity()
+    user = User.query.filter_by(email=current_email).first()
+
+    # Get all attempts for this user in this course
+    attempts = db.session.query(StudentTestAttempt, Tests).join(Tests)\
+        .filter(StudentTestAttempt.student_id == user.id)\
+        .filter(Tests.course_id == course_id)\
+        .filter(StudentTestAttempt.status == 'submitted')\
+        .order_by(Tests.start_time).all()
+
+    if not attempts:
+        return jsonify({"message": "No data"}), 200
+
+    # 1. Improvement Trend
+    trend_labels = []
+    trend_scores = []
+    total_time = 0
+    
+    tag_agg = {} # For weak topics
+
+    for att, test in attempts:
+        percentage = (att.total_score / test.total_marks * 100) if test.total_marks else 0
+        trend_labels.append(test.title)
+        trend_scores.append(percentage)
+        total_time += (att.time_taken_seconds or 0)
+        
+        # Aggregate tags for weak topics
+        q_attempts = StudentQuestionAttempt.query.filter_by(attempt_id=att.attempt_id).all()
+        for qa in q_attempts:
+            q = qa.question
+            marks = qa.marks_obtained or 0
+            try:
+                tags = json.loads(q.tags)
+                for tag in tags:
+                    if tag not in tag_agg: tag_agg[tag] = [0, 0]
+                    tag_agg[tag][0] += marks
+                    tag_agg[tag][1] += q.marks
+            except: pass
+
+    # Calculate Weak Topics (accuracy < 50%)
+    weak_topics = []
+    for tag, (obtained, total) in tag_agg.items():
+        accuracy = (obtained / total * 100) if total > 0 else 0
+        if accuracy < 60: # Threshold for "Weak"
+            weak_topics.append({"topic": tag, "accuracy": round(accuracy, 1)})
+    
+    # Sort weak topics by lowest accuracy
+    weak_topics.sort(key=lambda x: x['accuracy'])
+
+    return jsonify({
+        "avg_time_seconds": total_time / len(attempts),
+        "trend": {
+            "labels": trend_labels,
+            "data": trend_scores
+        },
+        "weak_topics": weak_topics[:5] # Top 5 weakest
+    })

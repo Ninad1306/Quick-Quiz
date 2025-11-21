@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Clock, AlertCircle, CheckCircle, Calendar } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle, Calendar, BarChart3 } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import DropdownButton from "../Utils/DropdownButton";
 import AddQuestions from "../Modal/AddQuestions";
@@ -7,7 +7,9 @@ import DeleteQuestions from "../Modal/DeleteQuestions";
 import ModifyDuration from "../Modal/ModifyDuration";
 import AddManualQuestion from "../Modal/AddManualQuestion";
 import PublishQuiz from "../Modal/PublishQuiz";
+import Button from "../Utils/Button";
 import axios from "axios";
+import TeacherAnalyticsDashboard from "../Analytics/TeacherAnalyticsDashboard";
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -24,6 +26,27 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
   const [showDeleteQuestions, setShowDeleteQuestions] = useState(false);
   const [showModifyDuration, setShowModifyDuration] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+
+  useEffect(() => {
+    const checkQuizCompletion = () => {
+      const now = new Date();
+      if (quizData.status === "completed") {
+        setQuizCompleted(true);
+      } else if (quizData.start_time) {
+        const startTime = new Date(quizData.start_time);
+        const endTime = new Date(
+          startTime.getTime() + quizData.duration_minutes * 60000
+        );
+        endTime.setMinutes(startTime.getMinutes() + quizData.duration_minutes);
+        if (now > endTime) {
+          setQuizCompleted(true);
+        }
+      }
+    };
+    checkQuizCompletion();
+  }, [quizData]);
 
   useEffect(() => {
     fetchQuestions();
@@ -57,8 +80,8 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
         `${API_BASE_URL}/teacher/list_quiz/${quiz.course_id}`,
         { headers: getAuthHeaders() }
       );
-      
-      const updatedQuiz = response.data.find(q => q.test_id === quiz.test_id);
+
+      const updatedQuiz = response.data.find((q) => q.test_id === quiz.test_id);
       if (updatedQuiz) {
         setQuizData(updatedQuiz);
       }
@@ -67,6 +90,14 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     }
     setLoading(false);
   };
+
+  const handleViewAnalytics = () => {
+    setShowAnalytics(true);
+  }
+
+  const handleHideAnalytics = () => {
+    setShowAnalytics(false);
+  }
 
   const handlePublish = async (publishForm) => {
     setLoading(true);
@@ -163,13 +194,25 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
               </button>
             )}
 
-            {quiz.status !== "completed" && (
+            {!quizCompleted && (
               <DropdownButton
                 onAddQuestions={() => setShowAddQuestions(true)}
                 onAddManualQuestion={() => setShowAddManual(true)}
                 onDeleteQuestions={() => setShowDeleteQuestions(true)}
                 onModifyDuration={() => setShowModifyDuration(true)}
               />
+            )}
+
+            {quizCompleted && !showAnalytics && (
+              <Button onClick={handleViewAnalytics} variant="primary" icon={BarChart3}>
+                View Analytics
+              </Button>
+            )}
+
+            {quizCompleted && showAnalytics && (
+              <Button onClick={handleHideAnalytics} variant="primary" icon={BarChart3}>
+                Hide Analytics
+              </Button>
             )}
           </div>
         </div>
@@ -204,6 +247,15 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
           </div>
         )}
       </div>
+
+      {showAnalytics && (
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <TeacherAnalyticsDashboard
+            quizId={quizData.test_id}
+            onBack={() => setShowAnalytics(false)}
+          />
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-xl font-bold mb-4">

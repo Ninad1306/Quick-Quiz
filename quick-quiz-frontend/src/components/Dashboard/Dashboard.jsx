@@ -10,6 +10,7 @@ import EnrollCourse from "../Modal/EnrollCourse";
 import AddQuiz from "../Modal/AddQuiz";
 import TeacherQuizManagement from "../Quiz/TeacherQuizManagement";
 import StudentQuizAttempt from "../Quiz/StudentQuizAttempt";
+import CourseAnalyticsDashboard from "../Analytics/CourseAnalyticsDashboard";
 
 const MainPage = ({ user, onLogout }) => {
   const [courses, setCourses] = useState([]);
@@ -98,8 +99,6 @@ const MainPage = ({ user, onLogout }) => {
   const handleAddCourse = async (formData, setError, setLoading) => {
     setLoading(true);
     try {
-      console.log("here");
-      
       await axios.post(`${API_BASE_URL}/teacher/register_course`, formData, {
         headers: {
           Authorization: "Bearer " + localStorage.getItem("token"),
@@ -230,7 +229,12 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const handleViewAnalytics = () => {
-    console.log("View analytics for:", selectedCourse?.course_id);
+    setCurrentView("analytics");
+  };
+
+  const handleTeacherAnalyticsClick = (quiz) => {
+    setSelectedQuiz(quiz);
+    setCurrentView("teacher_analytics");
   };
 
   useEffect(() => {
@@ -248,6 +252,15 @@ const MainPage = ({ user, onLogout }) => {
   }
 
   const content = () => {
+    if (currentView === "analytics" && selectedCourse) {
+      return (
+        <CourseAnalyticsDashboard
+          courseId={selectedCourse.course_id}
+          onBack={() => setCurrentView("course")}
+        />
+      );
+    }
+
     if (selectedQuiz) {
       if (user.role === "student") {
         return (

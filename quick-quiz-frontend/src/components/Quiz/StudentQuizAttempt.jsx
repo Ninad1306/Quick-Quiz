@@ -3,6 +3,7 @@ import { Clock, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 import Button from "../Utils/Button";
+import StudentAnalytics from "../Analytics/StudentAnalytics";
 
 const StudentQuizAttempt = ({ quiz, onBack }) => {
   const [attemptId, setAttemptId] = useState(null);
@@ -15,6 +16,8 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   const [scoreData, setScoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  let content;
 
   useEffect(() => {
     const initializeQuiz = async () => {
@@ -31,11 +34,18 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
 
         if (data.message === "Test already submitted") {
           setSubmitted(true);
+          const currentTime = new Date().toISOString();
           setScoreData({
             total_score: data.total_score,
             per_question: [],
             attempt_id: data.attempt_id,
           });
+          if (data.end_time && data.end_time >= currentTime) {
+            setShowAnalytics(false);
+          } else {
+            setShowAnalytics(true);
+            setAttemptId(data.attempt_id);
+          }
           setLoading(false);
           return;
         }
@@ -156,34 +166,40 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
 
   if (submitted) {
     return (
-      <div className="max-w-3xl mx-auto p-6 mt-8">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <CheckCircle size={64} className="mx-auto text-green-600 mb-4" />
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">
-            Quiz Submitted!
-          </h2>
+      <div>
+        <div className="max-w-3xl mx-auto p-6 mt-8">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <CheckCircle size={64} className="mx-auto text-green-600 mb-4" />
+            <h2 className="text-3xl font-bold mb-2 text-gray-800">
+              Quiz Submitted!
+            </h2>
 
-          {scoreData && (
-            <div className="my-6 p-6 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-gray-600 mb-2 uppercase tracking-wide text-sm font-semibold">
-                Your Score
-              </p>
-              <p className="text-5xl font-bold text-blue-600">
-                {scoreData.total_score}{" "}
-                <span className="text-2xl text-gray-400">
-                  / {quiz.total_marks}
-                </span>
-              </p>
-            </div>
-          )}
+            {scoreData && (
+              <div className="my-6 p-6 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-gray-600 mb-2 uppercase tracking-wide text-sm font-semibold">
+                  Your Score
+                </p>
+                <p className="text-5xl font-bold text-blue-600">
+                  {scoreData.total_score}{" "}
+                  <span className="text-2xl text-gray-400">
+                    / {quiz.total_marks}
+                  </span>
+                </p>
+              </div>
+            )}
 
-          <p className="text-gray-600 mb-8">
-            Your answers have been recorded successfully.
-          </p>
-          <Button onClick={onBack} variant="primary" className="mx-auto">
-            Back to Course
-          </Button>
+            <p className="text-gray-600 mb-8">
+              Your answers have been recorded successfully.
+            </p>
+            <Button onClick={onBack} variant="primary" className="mx-auto">
+              Back to Course
+            </Button>
+          </div>
         </div>
+
+        {showAnalytics && (
+          <StudentAnalytics attemptId={attemptId} onBack={onBack} />
+        )}
       </div>
     );
   }

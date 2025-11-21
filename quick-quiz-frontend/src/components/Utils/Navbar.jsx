@@ -31,18 +31,19 @@ const Navbar = ({
 
           <div className="flex items-center gap-4">
             {currentView === "course" && user?.role === "teacher" && (
-              <>
-                <Button onClick={onAddQuiz} variant="primary" icon={Plus}>
-                  Add Quiz
-                </Button>
-                <Button
-                  onClick={onViewAnalytics}
-                  variant="ghost"
-                  icon={BarChart3}
-                >
-                  Analytics
-                </Button>
-              </>
+              <Button onClick={onAddQuiz} variant="primary" icon={Plus}>
+                Add Quiz
+              </Button>
+            )}
+
+            {currentView === "course" && user?.role === "student" && (
+              <Button
+                onClick={onViewAnalytics}
+                variant="ghost"
+                icon={BarChart3}
+              >
+                Analytics
+              </Button>
             )}
 
             {currentView === "home" && user?.role === "teacher" && (

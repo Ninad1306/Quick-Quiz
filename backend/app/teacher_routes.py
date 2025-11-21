@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, scheduler
-from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions
+from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions, StudentTestAttempt, StudentQuestionAttempt
 from functools import wraps
 from app.utils import (
     get_current_semester_and_year,
@@ -12,6 +12,7 @@ from app.utils import (
 from app.quizgen import generate_quiz
 import json, pytz, traceback
 from datetime import datetime, timedelta, timezone
+import numpy as np
 
 teacher_bp = Blueprint("teacher", __name__, url_prefix="/teacher")
 
@@ -632,3 +633,60 @@ def delete_course(user, course_id):
     except Exception as e:
         print(traceback.format_exc())
         return jsonify({"error": f"Exception occurred: {e}"}), 400
+
+@teacher_bp.route('/quiz_analytics/<int:quiz_id>', methods=['GET'])
+@jwt_required()
+def get_teacher_quiz_analytics(quiz_id):
+    # ... Verify teacher access logic here ...
+    
+    test = Tests.query.get(quiz_id)
+    
+    # Check if quiz is finished (Teacher sees analytics only after end time)
+    end_dt = test.start_time + timedelta(minutes=test.duration_minutes)
+    # if datetime.now(test.start_time.tzinfo) < end_dt:
+    #    return jsonify({"status": "pending"}), 200
+
+    attempts = StudentTestAttempt.query.filter_by(test_id=quiz_id, status='submitted').all()
+    
+    if not attempts:
+        return jsonify({"error": "No attempts yet"}), 400
+
+    scores = [a.total_score for a in attempts]
+    
+    # 1. Statistical Metrics
+    metrics = {
+        "mean": round(float(np.mean(scores)), 2),
+        "median": round(float(np.median(scores)), 2),
+        "std_dev": round(float(np.std(scores)), 2),
+        "min": float(np.min(scores)),
+        "max": float(np.max(scores)),
+        "count": len(scores)
+    }
+
+    # 2. Topic Ranking (Where did they lose marks?)
+    # Get all question attempts for this quiz
+    q_attempts = db.session.query(StudentQuestionAttempt, Questions)\
+        .join(Questions)\
+        .filter(Questions.test_id == quiz_id)\
+        .filter(StudentQuestionAttempt.attempt_id.in_([a.attempt_id for a in attempts]))\
+        .all()
+
+    topic_loss = {} # {tag: [lost_marks, total_possible_marks]}
+    
+    for qa, q in q_attempts:
+        marks_lost = q.marks - (qa.marks_obtained or 0)
+        try:
+            tags = json.loads(q.tags)
+            for tag in tags:
+                if tag not in topic_loss: topic_loss[tag] = 0
+                topic_loss[tag] += marks_lost
+        except: pass
+        
+    # Convert to list and sort by most marks lost
+    topic_ranking = [{"topic": k, "marks_lost": round(v, 2)} for k, v in topic_loss.items()]
+    topic_ranking.sort(key=lambda x: x['marks_lost'], reverse=True)
+
+    return jsonify({
+        "metrics": metrics,
+        "topic_ranking": topic_ranking
+    })
