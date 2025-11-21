@@ -1,10 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import Modal from "../Utils/Modal";
 import Button from "../Utils/Button";
 
 const EnrollCourse = ({ show, onClose, courses, onEnroll }) => {
+  const [error, setError] = useState("");
+
   return (
     <Modal show={show} onClose={onClose} title="Enroll in Course">
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
       <div className="space-y-3">
         {courses.length === 0 ? (
           <p className="text-gray-500 text-center py-8">No available courses</p>
@@ -21,7 +28,7 @@ const EnrollCourse = ({ show, onClose, courses, onEnroll }) => {
                 </div>
               </div>
               <Button
-                onClick={() => onEnroll(course.course_id)}
+                onClick={() => onEnroll(course.course_id, setError)}
                 variant="success"
                 className="w-full mt-2"
               >

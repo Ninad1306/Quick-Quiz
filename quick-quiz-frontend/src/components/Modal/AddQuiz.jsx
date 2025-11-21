@@ -14,12 +14,18 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
     total_questions: 1,
     passing_marks: 4,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    onSubmit({
-      ...quizData,
-      course_id: courseId,
-    });
+    onSubmit(
+      {
+        ...quizData,
+        course_id: courseId,
+      },
+      setLoading,
+      setError
+    );
 
     setQuizData({
       title: "",
@@ -34,6 +40,11 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
 
   return (
     <Modal show={show} onClose={onClose} title={`Add Quiz to ${courseId}`}>
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
       <div className="space-y-4">
         <InputField
           label="Quiz Title"
@@ -108,9 +119,15 @@ const AddQuiz = ({ show, onClose, courseId, onSubmit }) => {
           />
         </div>
         <div className="flex gap-2 pt-2">
-          <Button onClick={handleSubmit} variant="primary" className="flex-1">
-            Create Quiz
+          <Button
+            onClick={handleSubmit}
+            variant="primary"
+            className="flex-1 disabled:bg-gray-400"
+            disabled={loading}
+          >
+            {loading ? "Creating..." : "Create Quiz"}
           </Button>
+
           <Button onClick={onClose} variant="secondary" className="flex-1">
             Cancel
           </Button>

@@ -95,23 +95,27 @@ const MainPage = ({ user, onLogout }) => {
     }, 300);
   };
 
-  const handleAddCourse = async (formData) => {
-    await axios.post(`${API_BASE_URL}/teacher/register_course`, formData, {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-      },
-    });
-
-    setShowAddCourseModal(false);
-    fetchCourses(user.role);
+  const handleAddCourse = async (formData, setError, setLoading) => {
+    setLoading(true);
+    try {
+      console.log("here");
+      
+      await axios.post(`${API_BASE_URL}/teacher/register_course`, formData, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+      });
+      setShowAddCourseModal(false);
+      fetchCourses(user.role);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onDeleteCourse = async (courseId) => {
-    if (
-      !confirm(
-        `Are you sure you want to Delete ${courseId}?`
-      )
-    ) {
+    if (!confirm(`Are you sure you want to Delete ${courseId}?`)) {
       return;
     }
 
@@ -132,11 +136,7 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const onUnenrollCourse = async (courseId) => {
-    if (
-      !confirm(
-        `Are you sure you want to Unenroll from ${courseId}?`
-      )
-    ) {
+    if (!confirm(`Are you sure you want to Unenroll from ${courseId}?`)) {
       return;
     }
 
@@ -156,11 +156,7 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const onDeleteQuiz = async (id) => {
-    if (
-      !confirm(
-        `Are you sure you want to Delete Quiz ${id}?`
-      )
-    ) {
+    if (!confirm(`Are you sure you want to Delete Quiz ${id}?`)) {
       return;
     }
 
@@ -179,18 +175,23 @@ const MainPage = ({ user, onLogout }) => {
     }
   };
 
-  const handleEnroll = async (courseId) => {
-    await axios.post(
-      `${API_BASE_URL}/student/enroll`,
-      { course_id: courseId },
-      {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      }
-    );
-    setShowEnrollModal(false);
-    fetchCourses(user.role);
+  const handleEnroll = async (courseId, setError) => {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/student/enroll`,
+        { course_id: courseId },
+        {
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }
+      );
+
+      setShowEnrollModal(false);
+      fetchCourses(user.role);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    }
   };
 
   const handleCourseClick = (course) => {
@@ -200,6 +201,7 @@ const MainPage = ({ user, onLogout }) => {
 
   const handleBackToCourses = () => {
     setSelectedCourse(null);
+    setQuizzes([]);
     setCurrentView("home");
   };
 
@@ -210,13 +212,21 @@ const MainPage = ({ user, onLogout }) => {
     setCurrentView("quiz");
   };
 
-  const handleAddQuiz = async (quizData) => {
-    await axios.post(`${API_BASE_URL}/teacher/create_quiz`, quizData, {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-      },
-    });
-    setShowAddQuizModal(false);
+  const handleAddQuiz = async (quizData, setLoading, setError) => {
+    setLoading(true);
+    try {
+      await axios.post(`${API_BASE_URL}/teacher/create_quiz`, quizData, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
+      });
+
+      setShowAddQuizModal(false);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleViewAnalytics = () => {

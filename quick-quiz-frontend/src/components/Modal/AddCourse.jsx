@@ -12,6 +12,8 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
     course_objectives: "",
     offered_at: "Fall_2025",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const courseLevels = [
     "Grade 1",
@@ -31,7 +33,7 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
   ];
 
   const handleSubmit = () => {
-    onSubmit(formData);
+    onSubmit(formData, setError, setLoading);
     setFormData({
       course_id: "",
       course_name: "",
@@ -43,6 +45,11 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
 
   return (
     <Modal show={show} onClose={onClose} title="Register New Course">
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
       <div className="space-y-4">
         <InputField
           label="Course ID"
@@ -87,9 +94,15 @@ const AddCourse = ({ show, onClose, onSubmit }) => {
           rows="3"
         />
         <div className="flex gap-2 pt-2">
-          <Button onClick={handleSubmit} variant="primary" className="flex-1">
-            Register Course
+          <Button
+            onClick={handleSubmit}
+            variant="primary"
+            className="flex-1 disabled:bg-gray-400"
+            disabled={loading}
+          >
+            {loading ? "Registering..." : "Register Course"}
           </Button>
+
           <Button onClick={onClose} variant="secondary" className="flex-1">
             Cancel
           </Button>

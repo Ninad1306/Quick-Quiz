@@ -4,8 +4,8 @@ import Button from "../Utils/Button";
 
 const CourseCard = ({ course, userRole, onClick, onDeleteCourse, onUnenrollCourse }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition ">
-      <div onClick={onClick} className="cursor-pointer">
+    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition flex flex-col h-full">
+      <div onClick={onClick} className="cursor-pointer flex-1">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-bold text-gray-800">
@@ -52,7 +52,7 @@ const CourseCard = ({ course, userRole, onClick, onDeleteCourse, onUnenrollCours
         <Button
           onClick={() => onUnenrollCourse(course.course_id)}
           variant="primary"
-          className="w-full"
+          className="w-full mt-auto"
         >
           Unenroll
         </Button>
