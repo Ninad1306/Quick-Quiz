@@ -107,6 +107,14 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const onDeleteCourse = async (courseId) => {
+    if (
+      !confirm(
+        `Are you sure you want to Delete ${courseId}?`
+      )
+    ) {
+      return;
+    }
+
     const headers = {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     };
@@ -123,7 +131,39 @@ const MainPage = ({ user, onLogout }) => {
     }
   };
 
+  const onUnenrollCourse = async (courseId) => {
+    if (
+      !confirm(
+        `Are you sure you want to Unenroll from ${courseId}?`
+      )
+    ) {
+      return;
+    }
+
+    const headers = {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    };
+    const res = await axios.delete(
+      `${API_BASE_URL}/student/unenroll/${courseId}`,
+      {
+        headers,
+      }
+    );
+
+    if (res.status === 200) {
+      fetchCourses(user.role);
+    }
+  };
+
   const onDeleteQuiz = async (id) => {
+    if (
+      !confirm(
+        `Are you sure you want to Delete Quiz ${id}?`
+      )
+    ) {
+      return;
+    }
+
     const header = {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     };
@@ -269,6 +309,7 @@ const MainPage = ({ user, onLogout }) => {
                   userRole={user.role}
                   onClick={() => handleCourseClick(course)}
                   onDeleteCourse={onDeleteCourse}
+                  onUnenrollCourse={onUnenrollCourse}
                 />
               ))}
             </div>

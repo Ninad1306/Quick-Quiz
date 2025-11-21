@@ -2,7 +2,7 @@ import React from "react";
 import { BookOpen, GraduationCap } from "lucide-react";
 import Button from "../Utils/Button";
 
-const CourseCard = ({ course, userRole, onClick, onDeleteCourse }) => {
+const CourseCard = ({ course, userRole, onClick, onDeleteCourse, onUnenrollCourse }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition ">
       <div onClick={onClick} className="cursor-pointer">
@@ -45,6 +45,16 @@ const CourseCard = ({ course, userRole, onClick, onDeleteCourse }) => {
           className="w-full"
         >
           Delete
+        </Button>
+      )}
+
+      {userRole === "student" && (
+        <Button
+          onClick={() => onUnenrollCourse(course.course_id)}
+          variant="primary"
+          className="w-full"
+        >
+          Unenroll
         </Button>
       )}
     </div>

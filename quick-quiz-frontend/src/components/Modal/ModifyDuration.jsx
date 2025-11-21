@@ -4,7 +4,13 @@ import Modal from "../Utils/Modal";
 import axios from "axios";
 import { API_BASE_URL } from "../../constants";
 
-const ModifyDuration = ({ show, onClose, quizId, currentDuration }) => {
+const ModifyDuration = ({
+  show,
+  onClose,
+  quizId,
+  currentDuration,
+  onUpdate,
+}) => {
   const [extraTime, setExtraTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +36,7 @@ const ModifyDuration = ({ show, onClose, quizId, currentDuration }) => {
         throw new Error(data.error || "Failed to modify duration");
       }
 
-      alert("Duration modified successfully!");
+      onUpdate();
       onClose();
       setExtraTime("");
     } catch (err) {

@@ -4,7 +4,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../constants";
 
 // Add Questions Component
-const AddQuestions = ({ show, onClose, quizId }) => {
+const AddQuestions = ({ show, onClose, quizId, onUpdate }) => {
   const [totalQuestions, setTotalQuestions] = useState("");
   const [totalMarks, setTotalMarks] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const AddQuestions = ({ show, onClose, quizId }) => {
         }
       );
 
-      alert("Questions added successfully!");
+      onUpdate();
       onClose();
       setTotalQuestions("");
       setTotalMarks("");

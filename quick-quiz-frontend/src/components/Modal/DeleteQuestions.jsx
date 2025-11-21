@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import axios from "axios";
 
-const DeleteQuestions = ({ show, onClose, questions, quizId }) => {
+const DeleteQuestions = ({ show, onClose, questions, quizId, onUpdate }) => {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +54,7 @@ const DeleteQuestions = ({ show, onClose, questions, quizId }) => {
         }
       );
 
-      alert("Questions deleted successfully!");
+      onUpdate();
       onClose();
       setSelectedQuestions([]);
     } catch (err) {

@@ -48,6 +48,26 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     }
   };
 
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      await fetchQuestions();
+
+      const response = await axios.get(
+        `${API_BASE_URL}/teacher/list_quiz/${quiz.course_id}`,
+        { headers: getAuthHeaders() }
+      );
+      
+      const updatedQuiz = response.data.find(q => q.test_id === quiz.test_id);
+      if (updatedQuiz) {
+        setQuizData(updatedQuiz);
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    }
+    setLoading(false);
+  };
+
   const handlePublish = async (publishForm) => {
     setLoading(true);
     try {
@@ -264,6 +284,7 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
         show={showAddQuestions}
         onClose={() => setShowAddQuestions(false)}
         quizId={quiz?.test_id}
+        onUpdate={refreshData}
       />
 
       <DeleteQuestions
@@ -271,6 +292,7 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
         onClose={() => setShowDeleteQuestions(false)}
         questions={questions}
         quizId={quiz?.test_id}
+        onUpdate={refreshData}
       />
 
       <ModifyDuration
@@ -278,12 +300,14 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
         onClose={() => setShowModifyDuration(false)}
         quizId={quiz?.test_id}
         currentDuration={quiz?.duration_minutes}
+        onUpdate={refreshData}
       />
 
       <AddManualQuestion
         show={showAddManual}
         onClose={() => setShowAddManual(false)}
         quizId={quiz?.test_id}
+        onUpdate={refreshData}
       />
     </div>
   );

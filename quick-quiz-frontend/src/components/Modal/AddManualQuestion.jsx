@@ -4,7 +4,7 @@ import Modal from "../Utils/Modal";
 import axios from "axios";
 import { API_BASE_URL } from "../../constants";
 
-const AddManualQuestion = ({ show, onClose, quizId }) => {
+const AddManualQuestion = ({ show, onClose, quizId, onUpdate }) => {
   const [questionData, setQuestionData] = useState({
     question_type: "mcq",
     question_text: "",
@@ -93,7 +93,7 @@ const AddManualQuestion = ({ show, onClose, quizId }) => {
         throw new Error(data.error || "Failed to add question");
       }
 
-      alert("Question added successfully!");
+      onUpdate();
       onClose();
       setQuestionData({
         question_type: "mcq",
