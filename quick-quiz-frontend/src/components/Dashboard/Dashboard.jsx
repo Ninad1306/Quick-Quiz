@@ -110,11 +110,15 @@ const MainPage = ({ user, onLogout }) => {
     const headers = {
       Authorization: `Bearer ${localStorage.getItem("token")}`,
     };
-    const res = await axios.post(`${API_BASE_URL}/teacher/delete_course/${courseId}`, {}, {
-      headers,
-    });
-    
-    if(res.status === 200){
+    const res = await axios.post(
+      `${API_BASE_URL}/teacher/delete_course/${courseId}`,
+      {},
+      {
+        headers,
+      }
+    );
+
+    if (res.status === 200) {
       fetchCourses(user.role);
     }
   };
@@ -160,7 +164,8 @@ const MainPage = ({ user, onLogout }) => {
   };
 
   const handleQuizClick = (quiz, role) => {
-    if (role === "student" && !quiz.can_attempt) return;
+    if (role === "student" && quiz.state === "published" && !quiz.can_attempt)
+      return;
     setSelectedQuiz(quiz);
     setCurrentView("quiz");
   };

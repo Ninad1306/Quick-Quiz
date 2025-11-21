@@ -13,8 +13,9 @@ const Course = ({
   onClickQuiz,
   onDeleteQuiz,
 }) => {
-  const canAttempQuiz = (role, can_attempt) => {
-    if (role === "student" && !can_attempt) return false;
+  const canAttempQuiz = (role, quiz) => {
+    if (role === "student" && quiz.state === "published" && !quiz.can_attempt)
+      return false;
     return true;
   };
 
@@ -90,7 +91,7 @@ const Course = ({
                 <div
                   onClick={onClickQuiz.bind(null, quiz, userRole)}
                   className={`${
-                    !canAttempQuiz(userRole, quiz.can_attempt)
+                    !canAttempQuiz(userRole, quiz)
                       ? "opacity-50 cursor-not-allowed"
                       : "cursor-pointer"
                   }`}

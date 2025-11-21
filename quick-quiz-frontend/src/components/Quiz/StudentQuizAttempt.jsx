@@ -29,8 +29,20 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
           {},
           { headers }
         );
-        
-        const newAttemptId = startRes.data.attempt_id;
+        const data = startRes.data;
+
+        if (data.message === "Test already submitted") {
+          setSubmitted(true);
+          setScoreData({
+            total_score: data.total_score,
+            per_question: [],
+            attempt_id: data.attempt_id,
+          });
+          setLoading(false);
+          return;
+        }
+
+        const newAttemptId = data.attempt_id;
         setAttemptId(newAttemptId);
 
         // Step B: Fetch Questions
@@ -39,14 +51,16 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
           { headers }
         );
         setQuestions(qRes.data.questions);
-        
+
         // Step C: Setup Timer
         calculateTimeRemaining();
         setLoading(false);
-
       } catch (err) {
         console.error("Initialization error:", err);
-        setError(err.response?.data?.error || "Failed to load quiz. It might not be active.");
+        setError(
+          err.response?.data?.error ||
+            "Failed to load quiz. It might not be active."
+        );
         setLoading(false);
       }
     };
@@ -73,7 +87,9 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   const calculateTimeRemaining = () => {
     // Assuming quiz window is fixed (start_time to start_time + duration)
     const startTime = new Date(quiz.start_time);
-    const endTime = new Date(startTime.getTime() + quiz.duration_minutes * 60000);
+    const endTime = new Date(
+      startTime.getTime() + quiz.duration_minutes * 60000
+    );
     const now = new Date();
     const remaining = Math.floor((endTime - now) / 1000);
     setTimeRemaining(Math.max(0, remaining));
@@ -84,7 +100,9 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hrs > 0 ? hrs + ':' : ''}${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${hrs > 0 ? hrs + ":" : ""}${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   // 3. Handle Inputs
@@ -103,14 +121,14 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
 
   const handleSubmit = async (isAuto = false) => {
     if (!attemptId) return;
-    
+
     setIsSubmitting(true);
     try {
       // Transform answers map to list format expected by backend
       // Backend expects: { answers: [{ question_id: 1, selected_options: "A" }, ...] }
-      const formattedAnswers = Object.keys(answers).map(qId => ({
+      const formattedAnswers = Object.keys(answers).map((qId) => ({
         question_id: parseInt(qId),
-        selected_options: answers[qId]
+        selected_options: answers[qId],
       }));
 
       const token = localStorage.getItem("token");
@@ -121,10 +139,7 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       );
 
       setSubmitted(true);
-      console.log(response.data);
-      
       setScoreData(response.data); // Backend returns { score, per_question, attempt_id }
-
     } catch (err) {
       console.error("Submit error:", err);
       alert("Failed to submit quiz. Please try again.");
@@ -143,7 +158,9 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     return (
       <div className="p-8 text-center">
         <div className="text-red-600 mb-4 text-lg">{error}</div>
-        <Button onClick={onBack} variant="secondary">Back to Course</Button>
+        <Button onClick={onBack} variant="secondary">
+          Back to Course
+        </Button>
       </div>
     );
   }
@@ -153,13 +170,20 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       <div className="max-w-3xl mx-auto p-6 mt-8">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <CheckCircle size={64} className="mx-auto text-green-600 mb-4" />
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">Quiz Submitted!</h2>
-          
+          <h2 className="text-3xl font-bold mb-2 text-gray-800">
+            Quiz Submitted!
+          </h2>
+
           {scoreData && (
             <div className="my-6 p-6 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-gray-600 mb-2 uppercase tracking-wide text-sm font-semibold">Your Score</p>
+              <p className="text-gray-600 mb-2 uppercase tracking-wide text-sm font-semibold">
+                Your Score
+              </p>
               <p className="text-5xl font-bold text-blue-600">
-                {scoreData.total_score} <span className="text-2xl text-gray-400">/ {quiz.total_marks}</span>
+                {scoreData.total_score}{" "}
+                <span className="text-2xl text-gray-400">
+                  / {quiz.total_marks}
+                </span>
               </p>
             </div>
           )}
@@ -186,12 +210,18 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">{quiz.title}</h2>
-            <p className="text-gray-500 text-sm">Question {currentQuestionIndex + 1} of {questions.length}</p>
+            <p className="text-gray-500 text-sm">
+              Question {currentQuestionIndex + 1} of {questions.length}
+            </p>
           </div>
-          
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg border ${
-              timeRemaining < 300 ? "bg-red-50 text-red-600 border-red-100" : "bg-blue-50 text-blue-600 border-blue-100"
-            }`}>
+
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold text-lg border ${
+              timeRemaining < 300
+                ? "bg-red-50 text-red-600 border-red-100"
+                : "bg-blue-50 text-blue-600 border-blue-100"
+            }`}
+          >
             <Clock size={20} />
             <span>{formatTime(timeRemaining)}</span>
           </div>
@@ -201,7 +231,11 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-600 transition-all duration-300 ease-out"
-            style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+            style={{
+              width: `${
+                ((currentQuestionIndex + 1) / questions.length) * 100
+              }%`,
+            }}
           />
         </div>
       </div>
@@ -222,72 +256,92 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
           </div>
 
           <h3 className="text-xl font-medium text-gray-800 mb-8 leading-relaxed">
-            <span className="font-bold text-gray-400 mr-2">{currentQuestionIndex + 1}.</span>
+            <span className="font-bold text-gray-400 mr-2">
+              {currentQuestionIndex + 1}.
+            </span>
             {currentQ.question_text}
           </h3>
 
           <div className="space-y-3 flex-grow">
             {/* MCQ Options */}
-            {currentQ.question_type === "mcq" && currentQ.options?.map((opt) => (
-              <label
-                key={opt.id}
-                className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
-                  answers[currentQ.question_id] === opt.id 
-                    ? "border-blue-500 bg-blue-50 text-blue-800" 
-                    : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
-                }`}
-              >
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                   answers[currentQ.question_id] === opt.id ? "border-blue-500" : "border-gray-300"
-                }`}>
-                  {answers[currentQ.question_id] === opt.id && <div className="w-3 h-3 rounded-full bg-blue-500" />}
-                </div>
-                <input
-                  type="radio"
-                  name={`question-${currentQ.question_id}`}
-                  value={opt.id}
-                  checked={answers[currentQ.question_id] === opt.id}
-                  onChange={(e) => handleAnswerChange(currentQ.question_id, e.target.value)}
-                  className="hidden"
-                />
-                <span className="font-medium">{opt.text}</span>
-              </label>
-            ))}
-
-            {/* MSQ Options */}
-            {currentQ.question_type === "msq" && currentQ.options?.map((opt) => {
-              const isSelected = (answers[currentQ.question_id] || []).includes(opt.id);
-              return (
+            {currentQ.question_type === "mcq" &&
+              currentQ.options?.map((opt) => (
                 <label
                   key={opt.id}
                   className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50 text-blue-800" 
+                    answers[currentQ.question_id] === opt.id
+                      ? "border-blue-500 bg-blue-50 text-blue-800"
                       : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
                   }`}
                 >
-                  <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                     isSelected ? "border-blue-500 bg-blue-500" : "border-gray-300"
-                  }`}>
-                    {isSelected && <CheckCircle size={16} className="text-white" />}
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      answers[currentQ.question_id] === opt.id
+                        ? "border-blue-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {answers[currentQ.question_id] === opt.id && (
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                    )}
                   </div>
                   <input
-                    type="checkbox"
+                    type="radio"
+                    name={`question-${currentQ.question_id}`}
                     value={opt.id}
-                    checked={isSelected}
-                    onChange={(e) => {
-                      const current = answers[currentQ.question_id] || [];
-                      const newAnswer = e.target.checked
-                        ? [...current, opt.id]
-                        : current.filter((a) => a !== opt.id);
-                      handleAnswerChange(currentQ.question_id, newAnswer);
-                    }}
+                    checked={answers[currentQ.question_id] === opt.id}
+                    onChange={(e) =>
+                      handleAnswerChange(currentQ.question_id, e.target.value)
+                    }
                     className="hidden"
                   />
                   <span className="font-medium">{opt.text}</span>
                 </label>
-              );
-            })}
+              ))}
+
+            {/* MSQ Options */}
+            {currentQ.question_type === "msq" &&
+              currentQ.options?.map((opt) => {
+                const isSelected = (
+                  answers[currentQ.question_id] || []
+                ).includes(opt.id);
+                return (
+                  <label
+                    key={opt.id}
+                    className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 text-blue-800"
+                        : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                        isSelected
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {isSelected && (
+                        <CheckCircle size={16} className="text-white" />
+                      )}
+                    </div>
+                    <input
+                      type="checkbox"
+                      value={opt.id}
+                      checked={isSelected}
+                      onChange={(e) => {
+                        const current = answers[currentQ.question_id] || [];
+                        const newAnswer = e.target.checked
+                          ? [...current, opt.id]
+                          : current.filter((a) => a !== opt.id);
+                        handleAnswerChange(currentQ.question_id, newAnswer);
+                      }}
+                      className="hidden"
+                    />
+                    <span className="font-medium">{opt.text}</span>
+                  </label>
+                );
+              })}
 
             {/* NAT Input */}
             {currentQ.question_type === "nat" && (
@@ -295,7 +349,12 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
                 <input
                   type="number"
                   value={answers[currentQ.question_id] || ""}
-                  onChange={(e) => handleAnswerChange(currentQ.question_id, parseFloat(e.target.value))}
+                  onChange={(e) =>
+                    handleAnswerChange(
+                      currentQ.question_id,
+                      parseFloat(e.target.value)
+                    )
+                  }
                   placeholder="Enter your numerical answer"
                   className="w-full p-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 />
@@ -309,7 +368,9 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <Button
           variant="secondary"
-          onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
+          onClick={() =>
+            setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))
+          }
           disabled={currentQuestionIndex === 0}
           icon={ArrowLeft}
         >

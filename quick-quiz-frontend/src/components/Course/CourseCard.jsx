@@ -1,12 +1,8 @@
 import React from "react";
 import { BookOpen, GraduationCap } from "lucide-react";
 import Button from "../Utils/Button";
-import { API_BASE_URL } from "../../constants";
-import axios from "axios";
 
 const CourseCard = ({ course, userRole, onClick, onDeleteCourse }) => {
-
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition ">
       <div onClick={onClick} className="cursor-pointer">
@@ -36,7 +32,7 @@ const CourseCard = ({ course, userRole, onClick, onDeleteCourse }) => {
           {userRole === "student" && (
             <div className="text-sm text-gray-500">
               <span className="font-medium">Enrolled:</span>{" "}
-              {new Date(course.taken_at).toLocaleDateString()}
+              {new Date(course.enrolled_at).toLocaleDateString()}
             </div>
           )}
         </div>

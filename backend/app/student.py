@@ -293,9 +293,16 @@ def start_attempt(test_id):
         student_id=user.id,
         status='submitted'
     ).first()
-    
+
     if submitted_attempt:
-        return jsonify({"error": "Test already submitted"}), 403
+        return jsonify({
+            "message": "Test already submitted",
+            "attempt_id": submitted_attempt.attempt_id,
+            "total_score": submitted_attempt.total_score,
+            "percentage": submitted_attempt.percentage,
+            "passed": submitted_attempt.passed,
+            "time_taken_seconds": submitted_attempt.time_taken_seconds
+        }), 200
     
     # Check for in-progress attempt
     existing_attempt = StudentTestAttempt.query.filter_by(
@@ -397,6 +404,7 @@ def list_questions_for_quiz(test_id):
     }), 200
 
 
+# TODO: Remove if unused
 @student_bp.route('/save_answer/<int:attempt_id>', methods=['POST'])
 @jwt_required()
 def save_answer(attempt_id):
