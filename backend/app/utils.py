@@ -67,7 +67,9 @@ def get_mark_distribution(difficulty_list, total_marks):
     total_points = sum(question_points)
     weightage = [p / total_points for p in question_points]
     marks_per_question = [round(total_marks * w, 1) for w in weightage]
-    marks_per_question[-1] = total_marks - sum(marks_per_question[:-1])
+
+    if len(marks_per_question) != 0:
+        marks_per_question[-1] = total_marks - sum(marks_per_question[:-1])
 
     return marks_per_question
 

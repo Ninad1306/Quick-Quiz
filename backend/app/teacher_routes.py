@@ -194,6 +194,13 @@ def create_quiz(user):
     passing_marks = data.get("passing_marks", 40)
 
     try:
+        if int(passing_marks) > int(total_marks):
+            return jsonify({'error':'Passing marks cannot be greater than total marks.'}), 400
+        if int(total_questions) < 0:
+            return jsonify({'error':'Total questions cannot be negative.'}), 400
+        if int(passing_marks) < 0 or int(total_marks) < 0:
+            return jsonify({'error':'Passing/Total marks cannot be negative.'}), 400
+
         my_courses = {
             tc_map.course_id
             for tc_map in Teacher_Courses_Map.query.filter_by(teacher_id=user.id).all()
@@ -350,7 +357,10 @@ def publish_quiz(user, quiz_id):
 def modify_quiz_duration(user, quiz_id):
     try:
         data = request.get_json()
-        extra_time = data["extra_time"]
+        extra_time = data.get("extra_time", None)
+
+        if extra_time is None:
+            return jsonify({'error':"extra_time parameter needs to be set in request."}), 400
 
         test_obj = (
             Tests.query.filter_by(created_by=user.id, test_id=quiz_id)
@@ -364,6 +374,8 @@ def modify_quiz_duration(user, quiz_id):
                 ),
                 400,
             )
+        if int(test_obj.duration_minutes) + extra_time <= 0:
+            return jsonify({'error': "Test duration needs to be positive integer."}), 400
 
         test_obj.duration_minutes = int(test_obj.duration_minutes) + int(extra_time)
 
@@ -395,6 +407,8 @@ def delete_questions(user, quiz_id):
                 ),
                 400,
             )
+        elif test_obj.status != 'not_published':
+            return jsonify({'error': "Test can only be modified in not published state."}), 400
 
         data = request.get_json()
         question_ids = data["question_ids"]
@@ -406,8 +420,13 @@ def delete_questions(user, quiz_id):
             return jsonify(
                 {"error": "Some of the Question IDs not found for given test."}
             )
+        
+        question_objs = Questions.query.filter(Questions.question_id.in_(question_ids)).all()
+        marks = [int(q.marks) for q in question_objs]
+        test_obj.total_marks -= sum(marks)
 
         Questions.query.filter(Questions.question_id.in_(question_ids)).delete()
+        
         db.session.commit()
 
         return jsonify({"message": "Deletion successful"}), 200
@@ -428,6 +447,8 @@ def modify_quiz(user, quiz_id):
                 ),
                 400,
             )
+        elif test_obj.status != 'not_published':
+            return jsonify({'error': "Test can only be modified in not published state."}), 400
 
         quiz_update_data = request.get_json()
         # quiz_update_data = data['quiz_obj']
@@ -437,11 +458,17 @@ def modify_quiz(user, quiz_id):
         delta_questions = int(quiz_update_data.get("total_questions", 0))
         new_num_questions = old_num_questions + delta_questions
 
+        if new_num_questions < 0:
+            return jsonify({'error':"Number of questions cannot be negative."}), 400
+
         new_total_marks = (
             quiz_update_data["total_marks"]
             if "total_marks" in quiz_update_data.keys()
             else test_obj.total_marks
         )
+
+        if new_total_marks < 0:
+            return jsonify({'error':"Total marks cannot be negative."}), 400
 
         if old_num_questions < new_num_questions:
 
@@ -499,6 +526,7 @@ def modify_quiz(user, quiz_id):
             ):
                 db.session.delete(q)
 
+        db.session.commit()
         recalibrate_marks(quiz_id, new_total_marks)
 
         if "total_questions" in quiz_update_data:
@@ -537,6 +565,8 @@ def add_quiz_questions(user, quiz_id):
                 ),
                 400,
             )
+        elif test_obj.status != 'not_published':
+            return jsonify({'error': "Test can only be modified in not published state."}), 400
 
         data = request.get_json()
         if not isinstance(data, list):
@@ -556,7 +586,11 @@ def add_quiz_questions(user, quiz_id):
                 marks=item.get("marks", None),
                 difficulty_level=item.get("difficulty_level", None),
             )
-            marks_to_add += item.get("marks", 0)
+            m = item.get("marks", 0)
+            if m <= 0:
+                return jsonify({'error':'Marks need to be positive'}), 400
+
+            marks_to_add += m
             questions.append(obj)
 
         db.session.add_all(questions)

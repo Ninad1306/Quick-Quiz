@@ -373,9 +373,24 @@ def validate_question(mapper, connection, target):
         isinstance(answer, list) and all(isinstance(a, str) for a in answer)
     ):
         raise ValueError("MSQ correct_answer must be a list of strings")
+    
+    if qtype == "nat" and isinstance(answer, str) and isinstance(int(answer[1:-1]), int):
+        pass
 
-    if qtype == "nat" and not isinstance(answer, int):
+    elif qtype == "nat" and not isinstance(answer, int):
         raise ValueError("NAT correct_answer must be an integer")
+
+    if qtype in ("mcq", "msq"):
+        option_ids = [option["id"] for option in options]
+        if isinstance(answer, str):
+            answer_cleaned = answer[1:-1]
+            if answer_cleaned not in option_ids:
+                raise ValueError(f"MCQ correct_answer '{answer_cleaned}' must be one of the option IDs.")
+        elif isinstance(answer, list):
+            invalid_answers = [a for a in answer if a not in option_ids]
+            if invalid_answers:
+                raise ValueError(f"MSQ correct_answer IDs {invalid_answers} are not valid options.")
+
 
 
 # IMPROVED SCHEMA FOR STUDENT ATTEMPTS
