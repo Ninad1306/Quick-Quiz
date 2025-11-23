@@ -299,8 +299,8 @@ def start_attempt(test_id):
                 {
                     "message": "Test already submitted",
                     "attempt_id": submitted_attempt.attempt_id,
-                    "total_score": submitted_attempt.total_score,
-                    "percentage": submitted_attempt.percentage,
+                    "total_score": round(submitted_attempt.total_score, 2),
+                    "percentage": round(submitted_attempt.percentage, 2),
                     "passed": submitted_attempt.passed,
                     "time_taken_seconds": submitted_attempt.time_taken_seconds,
                     "end_time": end_time.isoformat() if end_time else None,
@@ -417,74 +417,6 @@ def list_questions_for_quiz(test_id):
     )
 
 
-# TODO: Remove if unused
-@student_bp.route("/save_answer/<int:attempt_id>", methods=["POST"])
-@jwt_required()
-def save_answer(attempt_id):
-    """Save/update answer for a single question (autosave functionality)"""
-    user, error_response, status_code = get_current_student()
-    if error_response:
-        return error_response, status_code
-
-    attempt = StudentTestAttempt.query.filter_by(
-        attempt_id=attempt_id, student_id=user.id, status="in_progress"
-    ).first()
-
-    if not attempt:
-        return jsonify({"error": "Active attempt not found"}), 404
-
-    if not is_test_active(attempt.test):
-        return jsonify({"error": "Test time has expired"}), 403
-
-    data = request.get_json()
-    question_id = data.get("question_id")
-    selected_answer = data.get("selected_answer")
-
-    if question_id is None:
-        return jsonify({"error": "question_id is required"}), 400
-
-    question = Questions.query.filter_by(
-        question_id=question_id, test_id=attempt.test_id
-    ).first()
-
-    if not question:
-        return jsonify({"error": "Question not found in this test"}), 404
-
-    try:
-        question_attempt = StudentQuestionAttempt.query.filter_by(
-            attempt_id=attempt_id, question_id=question_id
-        ).first()
-
-        if question_attempt:
-            old_answer = question_attempt.selected_answer
-            question_attempt.selected_answer = json.dumps(selected_answer)
-            question_attempt.answered_at = datetime.utcnow()
-
-            if old_answer != question_attempt.selected_answer:
-                question_attempt.answer_changed = True
-                question_attempt.answer_change_count += 1
-        else:
-            question_attempt = StudentQuestionAttempt(
-                attempt_id=attempt_id,
-                question_id=question_id,
-                selected_answer=json.dumps(selected_answer),
-            )
-            db.session.add(question_attempt)
-
-        db.session.commit()
-
-        return (
-            jsonify(
-                {"message": "Answer saved successfully", "question_id": question_id}
-            ),
-            200,
-        )
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": f"Failed to save answer: {str(e)}"}), 500
-
-
 @student_bp.route("/submit_attempt/<int:attempt_id>", methods=["POST"])
 @jwt_required()
 def submit_attempt(attempt_id):
@@ -568,48 +500,6 @@ def submit_attempt(attempt_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Failed to submit attempt: {str(e)}"}), 500
-
-
-@student_bp.route("/attempts/<int:test_id>", methods=["GET"])
-@jwt_required()
-def list_attempts_for_test(test_id):
-    """List all attempts by student for a specific test"""
-    user, error_response, status_code = get_current_student()
-    if error_response:
-        return error_response, status_code
-
-    test = Tests.query.filter_by(test_id=test_id).first()
-    if not test:
-        return jsonify({"error": "Test not found"}), 404
-
-    enrolled = Student_Courses_Map.query.filter_by(
-        student_id=user.id, course_id=test.course_id
-    ).first()
-
-    if not enrolled:
-        return jsonify({"error": "Not enrolled in this course"}), 403
-
-    attempts = (
-        StudentTestAttempt.query.filter_by(test_id=test_id, student_id=user.id)
-        .order_by(StudentTestAttempt.started_at.desc())
-        .all()
-    )
-
-    attempts_data = []
-    for attempt in attempts:
-        attempt_dict = attempt.to_dict(include_questions=True)
-
-        if attempt.status == "submitted":
-            for qa_dict in attempt_dict["questions"]:
-                question = Questions.query.get(qa_dict["question_id"])
-                if question:
-                    qa_dict["question_text"] = question.question_text
-                    qa_dict["correct_answer"] = json.loads(question.correct_answer)
-                    qa_dict["marks"] = question.marks
-
-        attempts_data.append(attempt_dict)
-
-    return jsonify({"attempts": attempts_data}), 200
 
 
 @student_bp.route("/results", methods=["GET"])
