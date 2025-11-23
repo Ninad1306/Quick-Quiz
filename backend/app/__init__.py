@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -28,6 +28,13 @@ def enable_foreign_keys():
     db.session.execute(text("PRAGMA foreign_keys = ON"))
     db.session.commit()
 
+@app.route('/')
+def serve_react():
+    return render_template('index.html')
+
+@app.route('/<path:path>')
+def catch_all(path):
+    return render_template('index.html')
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
