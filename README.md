@@ -36,6 +36,37 @@ cd quick-quiz-frontend
 npm install
 ```
 
+## Deployment
+
+Build the React app:
+```sh
+cd quick-quiz-frontend
+npm run build
+```
+
+Copy over the assets and html:
+```sh
+cd quick-quiz
+mkdir -p backend/app/templates
+mkdir -p backend/app/static/assets
+
+cp quick-quiz-frontend/dist/vite.svg backend/app/static/
+cp quick-quiz-frontend/dist/index.html backend/app/templates
+cp quick-quiz-frontend/dist/assets/* backend/app/static/assets/
+```
+
+Create and activate venv:
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Start the server using gunicorn after adding the appropriate API key:
+```sh
+sudo GEMINI_API_KEY=<YOUR_GEMINI_API_KEY> ./venv/bin/gunicorn --bind 0.0.0.0:80 --chdir backend app:app
+```
+
 ## Run locally
 
 Start the frontend using:
