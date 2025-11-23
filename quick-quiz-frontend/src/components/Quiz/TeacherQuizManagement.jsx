@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Clock, AlertCircle, CheckCircle, Calendar, BarChart3 } from "lucide-react";
+import {
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Calendar,
+  BarChart3,
+} from "lucide-react";
 import { API_BASE_URL } from "../../constants";
 import DropdownButton from "../Utils/DropdownButton";
 import AddQuestions from "../Modal/AddQuestions";
@@ -28,6 +34,10 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
   const [showAddManual, setShowAddManual] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+
+  useEffect(() => {
+    refreshData(false);
+  }, [showPublishModal]);
 
   useEffect(() => {
     const checkQuizCompletion = () => {
@@ -71,10 +81,10 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
     }
   };
 
-  const refreshData = async () => {
+  const refreshData = async (update_ques = true) => {
     setLoading(true);
     try {
-      await fetchQuestions();
+      if (update_ques) await fetchQuestions();
 
       const response = await axios.get(
         `${API_BASE_URL}/teacher/list_quiz/${quiz.course_id}`,
@@ -93,11 +103,11 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
   const handleViewAnalytics = () => {
     setShowAnalytics(true);
-  }
+  };
 
   const handleHideAnalytics = () => {
     setShowAnalytics(false);
-  }
+  };
 
   const handlePublish = async (publishForm) => {
     setLoading(true);
@@ -114,11 +124,6 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
 
       if (response.status === 200) {
         setMessage({ type: "success", text: "Quiz published successfully!" });
-        setQuizData({
-          ...quizData,
-          status: "published",
-          start_time: publishForm.start_time,
-        });
         setShowPublishModal(false);
       } else {
         setMessage({
@@ -204,13 +209,21 @@ const TeacherQuizManagement = ({ quiz, onBack }) => {
             )}
 
             {quizCompleted && !showAnalytics && (
-              <Button onClick={handleViewAnalytics} variant="primary" icon={BarChart3}>
+              <Button
+                onClick={handleViewAnalytics}
+                variant="primary"
+                icon={BarChart3}
+              >
                 View Analytics
               </Button>
             )}
 
             {quizCompleted && showAnalytics && (
-              <Button onClick={handleHideAnalytics} variant="primary" icon={BarChart3}>
+              <Button
+                onClick={handleHideAnalytics}
+                variant="primary"
+                icon={BarChart3}
+              >
                 Hide Analytics
               </Button>
             )}

@@ -221,6 +221,7 @@ const MainPage = ({ user, onLogout }) => {
       });
 
       setShowAddQuizModal(false);
+      setError("");
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {

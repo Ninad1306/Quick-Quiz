@@ -291,7 +291,7 @@ def list_questions(user, quiz_id):
         )
 
     questions_obj = Questions.query.filter_by(test_id=quiz_id).all()
-    return jsonify([question.to_dict() for question in questions_obj]), 200
+    return jsonify([question.to_dict(include_answer=True) for question in questions_obj]), 200
 
 
 @teacher_bp.route("/publish_quiz/<quiz_id>", methods=["POST"])

@@ -25,7 +25,7 @@ const Navbar = ({
           <div className="flex items-center gap-3">
             <BookOpen className="text-blue-600" size={32} />
             <h1 className="text-2xl font-bold text-gray-800">
-              Learning Portal
+              Quick Quiz
             </h1>
           </div>
 

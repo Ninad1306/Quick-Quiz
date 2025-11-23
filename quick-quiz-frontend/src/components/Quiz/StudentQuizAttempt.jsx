@@ -122,7 +122,7 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     }
   };
 
-  const handleSubmit = async (isAuto = false) => {
+  const handleSubmit = async () => {
     if (!attemptId) return;
 
     setIsSubmitting(true);
@@ -383,7 +383,7 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
         ) : (
           <Button
             variant="success"
-            onClick={() => handleSubmit(false)}
+            onClick={() => handleSubmit()}
             disabled={isSubmitting}
             className="px-8"
           >
