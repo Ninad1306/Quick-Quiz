@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import text
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates', static_url_path='')
 
 app_dir = os.path.abspath(os.path.dirname(__file__))
 parent_dir = os.path.dirname(app_dir)
@@ -28,6 +28,9 @@ def enable_foreign_keys():
     db.session.execute(text("PRAGMA foreign_keys = ON"))
     db.session.commit()
 
+@app.route('/')
+def serve_react():
+    return render_template('index.html')
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
