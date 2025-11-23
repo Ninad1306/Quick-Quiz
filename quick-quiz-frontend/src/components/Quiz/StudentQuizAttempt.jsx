@@ -74,18 +74,34 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
     initializeQuiz();
   }, [quiz.test_id]);
 
+  // 1. Timer Logic: Only handles the countdown
   useEffect(() => {
-    if (timeRemaining !== null && timeRemaining > 0 && !submitted) {
-      const timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleAutoSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
+    // Don't run if we haven't calculated time yet, or if already submitted
+    if (timeRemaining === null || submitted) return;
+
+    // If time is already 0, stop (Effect 2 will handle the submit)
+    if (timeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 0) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining, submitted]);
+  // Note: Keeping timeRemaining in dependency ensures we don't drift too far,
+  // though it technically restarts the interval every second.
+  // For a simple quiz, this is perfectly acceptable.
+
+  // 2. Trigger Logic: Watches for 0 and submits
+  useEffect(() => {
+    if (timeRemaining === 0 && !submitted) {
+      handleAutoSubmit();
     }
   }, [timeRemaining, submitted]);
 

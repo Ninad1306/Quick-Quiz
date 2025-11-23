@@ -285,9 +285,6 @@ def start_attempt(test_id):
     if not enrolled:
         return jsonify({"error": "Not enrolled in this course"}), 403
 
-    if not is_test_active(test):
-        return jsonify({"error": "Test is not currently active"}), 403
-
     submitted_attempt = StudentTestAttempt.query.filter_by(
         test_id=test_id, student_id=user.id, status="submitted"
     ).first()
@@ -308,6 +305,10 @@ def start_attempt(test_id):
             ),
             200,
         )
+    
+    # Return the submitted attemp if exists else throw error
+    if not is_test_active(test):
+        return jsonify({"error": "Test is not currently active"}), 403
 
     existing_attempt = StudentTestAttempt.query.filter_by(
         test_id=test_id, student_id=user.id, status="in_progress"
