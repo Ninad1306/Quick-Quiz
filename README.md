@@ -41,6 +41,7 @@ npm install
 Build the React app:
 ```sh
 cd quick-quiz-frontend
+npm install
 npm run build
 ```
 
