@@ -17,8 +17,7 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAnalytics, setShowAnalytics] = useState(false);
-  let content;
-
+  const [currentDuration, setCurrentDuration] = useState(quiz.duration_minutes);
   useEffect(() => {
     const initializeQuiz = async () => {
       try {
@@ -101,13 +100,46 @@ const StudentQuizAttempt = ({ quiz, onBack }) => {
 
   const calculateTimeRemaining = () => {
     const startTime = new Date(quiz.start_time);
-    const endTime = new Date(
-      startTime.getTime() + quiz.duration_minutes * 60000
-    );
+    const endTime = new Date(startTime.getTime() + currentDuration * 60000);
     const now = new Date();
     const remaining = Math.floor((endTime - now) / 1000);
     setTimeRemaining(Math.max(0, remaining));
   };
+
+  useEffect(() => {
+    if (submitted) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          `${API_BASE_URL}/student/quiz_status/${quiz.test_id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const { duration_minutes, status } = res.data;
+
+        if (duration_minutes !== currentDuration) {
+          setCurrentDuration(duration_minutes);
+          const startTime = new Date(quiz.start_time);
+          const newEndTime = new Date(
+            startTime.getTime() + duration_minutes * 60000
+          );
+          const now = new Date();
+          const newRemaining = Math.floor((newEndTime - now) / 1000);
+          setTimeRemaining(Math.max(0, newRemaining));
+
+          alert(
+            `Teacher has updated the quiz time. New duration: ${duration_minutes} mins.`
+          );
+        }
+      } catch (err) {
+        console.error("Sync error", err);
+      }
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, [quiz.test_id, currentDuration, submitted]);
 
   const formatTime = (seconds) => {
     if (seconds === null) return "--:--";

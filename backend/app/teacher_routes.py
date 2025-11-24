@@ -1,7 +1,15 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, scheduler
-from app.models import User, Courses, Teacher_Courses_Map, Tests, Questions, StudentTestAttempt, StudentQuestionAttempt
+from app.models import (
+    User,
+    Courses,
+    Teacher_Courses_Map,
+    Tests,
+    Questions,
+    StudentTestAttempt,
+    StudentQuestionAttempt,
+)
 from functools import wraps
 from app.utils import (
     get_current_semester_and_year,
@@ -195,11 +203,14 @@ def create_quiz(user):
 
     try:
         if int(passing_marks) > int(total_marks):
-            return jsonify({'error':'Passing marks cannot be greater than total marks.'}), 400
+            return (
+                jsonify({"error": "Passing marks cannot be greater than total marks."}),
+                400,
+            )
         if int(total_questions) < 0:
-            return jsonify({'error':'Total questions cannot be negative.'}), 400
+            return jsonify({"error": "Total questions cannot be negative."}), 400
         if int(passing_marks) < 0 or int(total_marks) < 0:
-            return jsonify({'error':'Passing/Total marks cannot be negative.'}), 400
+            return jsonify({"error": "Passing/Total marks cannot be negative."}), 400
 
         my_courses = {
             tc_map.course_id
@@ -291,7 +302,10 @@ def list_questions(user, quiz_id):
         )
 
     questions_obj = Questions.query.filter_by(test_id=quiz_id).all()
-    return jsonify([question.to_dict(include_answer=True) for question in questions_obj]), 200
+    return (
+        jsonify([question.to_dict(include_answer=True) for question in questions_obj]),
+        200,
+    )
 
 
 @teacher_bp.route("/publish_quiz/<quiz_id>", methods=["POST"])
@@ -360,7 +374,10 @@ def modify_quiz_duration(user, quiz_id):
         extra_time = data.get("extra_time", None)
 
         if extra_time is None:
-            return jsonify({'error':"extra_time parameter needs to be set in request."}), 400
+            return (
+                jsonify({"error": "extra_time parameter needs to be set in request."}),
+                400,
+            )
 
         test_obj = (
             Tests.query.filter_by(created_by=user.id, test_id=quiz_id)
@@ -375,7 +392,10 @@ def modify_quiz_duration(user, quiz_id):
                 400,
             )
         if int(test_obj.duration_minutes) + extra_time <= 0:
-            return jsonify({'error': "Test duration needs to be positive integer."}), 400
+            return (
+                jsonify({"error": "Test duration needs to be positive integer."}),
+                400,
+            )
 
         test_obj.duration_minutes = int(test_obj.duration_minutes) + int(extra_time)
 
@@ -407,8 +427,11 @@ def delete_questions(user, quiz_id):
                 ),
                 400,
             )
-        elif test_obj.status != 'not_published':
-            return jsonify({'error': "Test can only be modified in not published state."}), 400
+        elif test_obj.status != "not_published":
+            return (
+                jsonify({"error": "Test can only be modified in not published state."}),
+                400,
+            )
 
         data = request.get_json()
         question_ids = data["question_ids"]
@@ -420,13 +443,15 @@ def delete_questions(user, quiz_id):
             return jsonify(
                 {"error": "Some of the Question IDs not found for given test."}
             )
-        
-        question_objs = Questions.query.filter(Questions.question_id.in_(question_ids)).all()
+
+        question_objs = Questions.query.filter(
+            Questions.question_id.in_(question_ids)
+        ).all()
         marks = [int(q.marks) for q in question_objs]
         test_obj.total_marks -= sum(marks)
 
         Questions.query.filter(Questions.question_id.in_(question_ids)).delete()
-        
+
         db.session.commit()
 
         return jsonify({"message": "Deletion successful"}), 200
@@ -447,11 +472,13 @@ def modify_quiz(user, quiz_id):
                 ),
                 400,
             )
-        elif test_obj.status != 'not_published':
-            return jsonify({'error': "Test can only be modified in not published state."}), 400
+        elif test_obj.status != "not_published":
+            return (
+                jsonify({"error": "Test can only be modified in not published state."}),
+                400,
+            )
 
         quiz_update_data = request.get_json()
-        # quiz_update_data = data['quiz_obj']
         test_obj = Tests.query.get(quiz_id)
 
         old_num_questions = len(Questions.query.filter_by(test_id=quiz_id).all())
@@ -459,7 +486,7 @@ def modify_quiz(user, quiz_id):
         new_num_questions = old_num_questions + delta_questions
 
         if new_num_questions < 0:
-            return jsonify({'error':"Number of questions cannot be negative."}), 400
+            return jsonify({"error": "Number of questions cannot be negative."}), 400
 
         new_total_marks = (
             quiz_update_data["total_marks"]
@@ -468,7 +495,7 @@ def modify_quiz(user, quiz_id):
         )
 
         if new_total_marks < 0:
-            return jsonify({'error':"Total marks cannot be negative."}), 400
+            return jsonify({"error": "Total marks cannot be negative."}), 400
 
         if old_num_questions < new_num_questions:
 
@@ -565,8 +592,11 @@ def add_quiz_questions(user, quiz_id):
                 ),
                 400,
             )
-        elif test_obj.status != 'not_published':
-            return jsonify({'error': "Test can only be modified in not published state."}), 400
+        elif test_obj.status != "not_published":
+            return (
+                jsonify({"error": "Test can only be modified in not published state."}),
+                400,
+            )
 
         data = request.get_json()
         if not isinstance(data, list):
@@ -588,7 +618,7 @@ def add_quiz_questions(user, quiz_id):
             )
             m = item.get("marks", 0)
             if m <= 0:
-                return jsonify({'error':'Marks need to be positive'}), 400
+                return jsonify({"error": "Marks need to be positive"}), 400
 
             marks_to_add += m
             questions.append(obj)
@@ -668,51 +698,52 @@ def delete_course(user, course_id):
         print(traceback.format_exc())
         return jsonify({"error": f"Exception occurred: {e}"}), 400
 
-@teacher_bp.route('/quiz_analytics/<int:quiz_id>', methods=['GET'])
+
+@teacher_bp.route("/quiz_analytics/<int:quiz_id>", methods=["GET"])
 @jwt_required()
 def get_teacher_quiz_analytics(quiz_id):
-    
-    test = Tests.query.get(quiz_id)
-    
-    end_dt = test.start_time + timedelta(minutes=test.duration_minutes)
+    attempts = StudentTestAttempt.query.filter_by(
+        test_id=quiz_id, status="submitted"
+    ).all()
 
-    attempts = StudentTestAttempt.query.filter_by(test_id=quiz_id, status='submitted').all()
-    
     if not attempts:
         return jsonify({"error": "No attempts yet"}), 400
 
     scores = [a.total_score for a in attempts]
-    
+
     metrics = {
         "mean": round(float(np.mean(scores)), 2),
         "median": round(float(np.median(scores)), 2),
         "std_dev": round(float(np.std(scores)), 2),
         "min": round(float(np.min(scores)), 2),
         "max": round(float(np.max(scores)), 2),
-        "count": len(scores)
+        "count": len(scores),
     }
 
-    q_attempts = db.session.query(StudentQuestionAttempt, Questions)\
-        .join(Questions)\
-        .filter(Questions.test_id == quiz_id)\
-        .filter(StudentQuestionAttempt.attempt_id.in_([a.attempt_id for a in attempts]))\
+    q_attempts = (
+        db.session.query(StudentQuestionAttempt, Questions)
+        .join(Questions)
+        .filter(Questions.test_id == quiz_id)
+        .filter(StudentQuestionAttempt.attempt_id.in_([a.attempt_id for a in attempts]))
         .all()
+    )
 
     topic_loss = {}
-    
+
     for qa, q in q_attempts:
         marks_lost = q.marks - (qa.marks_obtained or 0)
         try:
             tags = json.loads(q.tags)
             for tag in tags:
-                if tag not in topic_loss: topic_loss[tag] = 0
+                if tag not in topic_loss:
+                    topic_loss[tag] = 0
                 topic_loss[tag] += marks_lost
-        except: pass
+        except:
+            pass
 
-    topic_ranking = [{"topic": k, "marks_lost": round(v, 2)} for k, v in topic_loss.items()]
-    topic_ranking.sort(key=lambda x: x['marks_lost'], reverse=True)
+    topic_ranking = [
+        {"topic": k, "marks_lost": round(v, 2)} for k, v in topic_loss.items()
+    ]
+    topic_ranking.sort(key=lambda x: x["marks_lost"], reverse=True)
 
-    return jsonify({
-        "metrics": metrics,
-        "topic_ranking": topic_ranking
-    })
+    return jsonify({"metrics": metrics, "topic_ranking": topic_ranking})
