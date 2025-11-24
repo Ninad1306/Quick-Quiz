@@ -405,7 +405,8 @@ def modify_quiz_duration(user, quiz_id):
             return jsonify({"message": "Test duration modified successfully."}), 200
 
         start_time = test_obj.start_time
-        end_time = start_time + timedelta(minutes=int(extra_time))
+        end_time = start_time + timedelta(minutes=int(test_obj.duration_minutes))
+        print(f"HERE>>>>{start_time}>>>>{end_time}")
 
         scheduler.modify_job(f"deactivate_test_{quiz_id}", next_run_time=end_time)
 
