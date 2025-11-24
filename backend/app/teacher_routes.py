@@ -406,7 +406,6 @@ def modify_quiz_duration(user, quiz_id):
 
         start_time = test_obj.start_time
         end_time = start_time + timedelta(minutes=int(test_obj.duration_minutes))
-        print(f"HERE>>>>{start_time}>>>>{end_time}")
 
         scheduler.modify_job(f"deactivate_test_{quiz_id}", next_run_time=end_time)
 
