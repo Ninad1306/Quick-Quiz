@@ -36,6 +36,22 @@ cd quick-quiz-frontend
 npm install
 ```
 
+## Run locally
+
+Start the frontend using:
+```sh
+cd quick-quiz-frontend
+npm install
+npm run dev
+```
+
+Start the backend after adding the appropriate API key:
+```sh
+cd backend
+export GEMINI_API_KEY=""
+flask --debug --app app run
+```
+
 ## Deployment
 
 Build the React app:
@@ -66,19 +82,4 @@ pip install -r requirements.txt
 Start the server using gunicorn after adding the appropriate API key:
 ```sh
 sudo GEMINI_API_KEY=<YOUR_GEMINI_API_KEY> ./venv/bin/gunicorn --bind 0.0.0.0:80 --chdir backend app:app
-```
-
-## Run locally
-
-Start the frontend using:
-```sh
-cd quick-quiz-frontend
-npm run dev
-```
-
-Start the backend after adding the appropriate API key:
-```sh
-cd backend
-export GEMINI_API_KEY=""
-flask --debug --app app run
 ```
